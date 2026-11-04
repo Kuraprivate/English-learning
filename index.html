@@ -1,0 +1,1363 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F6A44">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mantis Hour">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>The Mantis Hour</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: greenhouse-glass study desk — sticky tab bar, a reading column for the novel, a card grid for the word book, and one bottom sheet for word details. */
+:root{
+  --bg:#E7ECE6; --panel:#F6F8F4; --ink:#1D2620; --muted:#5D6B61; --line:#C9D3CA;
+  --accent:#2F6A44; --accent-soft:#D5E5D7; --blood:#9A2E2A; --blood-soft:#F1DCD8; --hl:#E9DFA8;
+  --f-display:"Cormorant Garamond","Iowan Old Style",Georgia,serif;
+  --f-read:"Literata",Georgia,"Times New Roman",serif;
+  --f-ui:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --shadow:0 10px 30px rgba(20,40,28,.14);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111814; --panel:#18221C; --ink:#E3EAE3; --muted:#9AAA9F; --line:#2C3A31;
+  --accent:#86BC93; --accent-soft:#22362A; --blood:#E08A80; --blood-soft:#3A2321; --hl:#4A4524;
+  --shadow:0 10px 30px rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111814; --panel:#18221C; --ink:#E3EAE3; --muted:#9AAA9F; --line:#2C3A31;
+  --accent:#86BC93; --accent-soft:#22362A; --blood:#E08A80; --blood-soft:#3A2321; --hl:#4A4524;
+  --shadow:0 10px 30px rgba(0,0,0,.5); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.6}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 8px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(40px,7vw,68px);line-height:1;margin:6px 0 6px;letter-spacing:-.01em;text-wrap:balance}
+h1 em{font-style:italic;font-weight:500;color:var(--accent)}
+.lede{color:var(--muted);margin:0;max-width:60ch}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-top:18px}
+nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto}
+.tab{appearance:none;border:0;background:none;color:var(--muted);font:500 15px var(--f-ui);padding:14px 14px 12px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:24px 80px}
+
+/* word book */
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.tools input[type=search]{flex:1 1 240px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:15px var(--f-ui)}
+.stat{font-family:var(--f-mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:5px 12px;font:13px var(--f-ui);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.card.known{opacity:.62}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.w{font-family:var(--f-read);font-weight:600;font-size:19px;line-height:1.25;overflow-wrap:anywhere}
+.cat{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--muted)}
+.ja{font-weight:700}
+.def{color:var(--muted);font-size:14px}
+.ex{font-family:var(--f-read);font-style:italic;font-size:14px;border-left:2px solid var(--accent-soft);padding-left:10px}
+.exja{font-size:13px;color:var(--muted);padding-left:12px}
+.inStory{font-family:var(--f-mono);font-size:11px;color:var(--accent)}
+.star{border:1px solid var(--line);background:none;color:var(--muted);border-radius:6px;font:12px var(--f-ui);padding:3px 8px;cursor:pointer;white-space:nowrap}
+.star.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.badge{display:inline-block;font:500 11px var(--f-ui);color:var(--blood);background:var(--blood-soft);border-radius:4px;padding:1px 6px;white-space:nowrap}
+.sims{display:flex;flex-direction:column;gap:5px;margin-top:4px;padding-top:8px;border-top:1px dashed var(--line)}
+.sims .lbl{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;color:var(--muted)}
+.sim{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:14px}
+.sim b{font-family:var(--f-read);font-weight:600}
+.sim span{color:var(--muted)}
+.empty{color:var(--muted);padding:30px 0}
+
+/* story */
+.story{display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px}
+.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);align-self:start;display:flex;flex-direction:column;gap:2px}
+.toc button{text-align:left;border:0;background:none;color:var(--muted);font:14px var(--f-ui);padding:8px 10px;border-radius:6px;cursor:pointer}
+.toc button .n{font-family:var(--f-mono);font-size:11px;display:block;letter-spacing:.1em}
+.toc button[aria-current="true"]{background:var(--panel);color:var(--ink)}
+.reader{max-width:66ch}
+.case{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;color:var(--blood);text-transform:uppercase}
+.reader h2{font-family:var(--f-display);font-size:clamp(32px,5vw,46px);line-height:1.05;margin:6px 0 22px;text-wrap:balance}
+.reader p{font-family:var(--f-read);font-size:18px;line-height:1.75;margin:0 0 1.1em}
+.reader p.letter{font-style:italic}
+.reader p.note{font-family:var(--f-mono);font-size:15px;background:var(--blood-soft);color:var(--ink);padding:14px 16px;border-radius:4px;line-height:1.6}
+.vw{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;border-bottom:1.5px dotted var(--accent);line-height:inherit}
+.vw:hover,.vw.active{background:var(--hl)}
+details.sum{margin:28px 0 18px;border-top:1px solid var(--line);padding-top:16px}
+details.sum summary{cursor:pointer;font-weight:700;color:var(--accent)}
+details.sum p{font-family:var(--f-ui);font-size:15px;line-height:1.8}
+.chwords{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chwords .chip{font-family:var(--f-read)}
+.pager{display:flex;justify-content:space-between;gap:10px;margin-top:28px}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--panel);border-radius:8px;padding:10px 16px;font:500 15px var(--f-ui);cursor:pointer}
+.btn.ghost{background:none;color:var(--accent)}
+.btn[disabled]{opacity:.35;cursor:default}
+.tip{font-size:13px;color:var(--muted);margin:0 0 18px}
+
+/* sheet */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--panel);border-top:1px solid var(--line);box-shadow:var(--shadow);
+  padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  transform:translateY(105%);transition:transform .22s ease}
+.sheet.open{transform:none}
+.sheet .in{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:6px}
+.sheet .w{font-size:24px}
+.sheet .row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.x{border:0;background:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:4px 8px}
+
+/* flash */
+.flash{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.fc{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-height:260px;padding:28px 24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:10px;cursor:pointer}
+.fc .w{font-size:30px}
+.fc .hint{font-size:13px;color:var(--muted)}
+.frow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+select{padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:14px var(--f-ui)}
+@media (max-width:760px){
+  .story{grid-template-columns:minmax(0,1fr);gap:16px}
+  .toc{position:static;flex-direction:row;overflow-x:auto}
+  .toc button{white-space:nowrap}
+  .reader p{font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){.sheet{transition:none}}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+</style>
+</head>
+<body>
+
+<header class="top wrap">
+  <div class="eyebrow">Vocabulary Case File · No. 1103</div>
+  <h1>The <em>Mantis</em> Hour</h1>
+  <p class="lede">ノートの単語・イディオムを単語帳にまとめ、それを使ったどんでん返しサスペンスを書き下ろした。本文の点線の単語をタップすると意味と使い方が出る。</p>
+</header>
+
+<nav class="tabs" aria-label="セクション">
+  <div class="wrap" role="tablist">
+    <button class="tab" role="tab" id="t-story" aria-selected="true" data-view="story">小説を読む</button>
+    <button class="tab" role="tab" id="t-book" aria-selected="false" data-view="book">単語帳</button>
+    <button class="tab" role="tab" id="t-scene" aria-selected="false" data-view="scene">場面別単語</button>
+    <button class="tab" role="tab" id="t-phrase" aria-selected="false" data-view="phrase">日常表現</button>
+    <button class="tab" role="tab" id="t-flash" aria-selected="false" data-view="flash">フラッシュカード</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <section id="v-story" class="story">
+    <div class="toc" id="toc"></div>
+    <article class="reader" id="reader"></article>
+  </section>
+
+  <section id="v-book" hidden>
+    <div class="tools">
+      <input type="search" id="q" placeholder="英語・日本語で検索（例: grudge / 恨み）">
+      <button class="chip" id="hideKnown" aria-pressed="false">覚えた単語を隠す</button>
+      <span class="stat" id="stat"></span>
+    </div>
+    <div class="chips" id="cats"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="v-scene" hidden>
+    <p class="tip">家・駅・外・学校・会社・職業の場面別に400語。<span class="badge">意外と知らない</span> は、よく使うのに日本人が知らない・和製英語と混同しやすい語。</p>
+    <div class="tools">
+      <input type="search" id="sq" placeholder="検索（例: outlet / コンセント）">
+      <button class="chip" id="sTricky" aria-pressed="false">意外と知らない語だけ</button>
+      <button class="chip" id="sHide" aria-pressed="false">覚えた単語を隠す</button>
+      <span class="stat" id="sstat"></span>
+    </div>
+    <div class="chips" id="scats"></div>
+    <div class="grid" id="sgrid"></div>
+  </section>
+
+  <section id="v-phrase" hidden>
+    <p class="tip">日常会話でよく使う表現100個。それぞれに言い換え表現とニュアンスの違いを付けた。</p>
+    <div class="tools">
+      <input type="search" id="pq" placeholder="検索（例: tired / 疲れ）">
+      <button class="chip" id="pHide" aria-pressed="false">覚えた表現を隠す</button>
+      <span class="stat" id="pstat"></span>
+    </div>
+    <div class="chips" id="pcats"></div>
+    <div class="grid" id="pgrid"></div>
+  </section>
+
+  <section id="v-flash" hidden>
+    <div class="flash">
+      <div class="frow">
+        <select id="fcat" aria-label="カテゴリー"></select>
+        <select id="fdir" aria-label="出題の向き">
+          <option value="en">英語 → 日本語</option>
+          <option value="ja">日本語 → 英語</option>
+        </select>
+      </div>
+      <div class="fc" id="fc" tabindex="0" role="button" aria-label="カードをめくる"></div>
+      <div class="frow">
+        <button class="btn ghost" id="fagain">もう一度</button>
+        <button class="btn" id="fknow">覚えた</button>
+      </div>
+      <div class="stat" id="fstat" style="text-align:center"></div>
+    </div>
+  </section>
+</main>
+
+<div class="sheet" id="sheet" role="dialog" aria-label="単語の説明">
+  <div class="in">
+    <div class="row"><span class="cat" id="s-cat"></span><button class="x" id="s-close" aria-label="閉じる">×</button></div>
+    <div class="w" id="s-w"></div>
+    <div class="ja" id="s-ja"></div>
+    <div class="def" id="s-def"></div>
+    <div class="ex" id="s-ex"></div>
+    <div class="exja" id="s-exja"></div>
+    <div class="row" style="justify-content:flex-start;margin-top:6px"><button class="star" id="s-star">☆ 覚えた</button></div>
+  </div>
+</div>
+
+<script>
+const SC={H:"家",T:"駅・電車",O:"外（公園・道路・店）",K:"学校",W:"会社",J:"職業"};
+const RAW2=`
+H||faucet|蛇口（米。英国では tap）|a device that controls water flow from a pipe|Turn off the faucet while you brush.|歯を磨く間は蛇口を閉めて。
+H||drain|排水口／水を切る|a hole where water flows away; to let liquid flow out|Hair is blocking the drain.|髪の毛が排水口を詰まらせている。
+H|*|dish rack|水切りかご|a rack where washed dishes dry|Put the plates in the dish rack.|皿を水切りかごに置いて。
+H||cutting board|まな板|a board for cutting food on|Use the cutting board, not the counter.|カウンターじゃなくまな板を使って。
+H|*|ladle|おたま|a deep spoon for serving soup|Serve the soup with a ladle.|おたまでスープをよそって。
+H|*|spatula|フライ返し、ヘラ|a flat tool for turning or spreading food|Flip the pancake with a spatula.|フライ返しでパンケーキを裏返して。
+H|*|colander|ざる、水切りボウル|a bowl with holes for draining food|Drain the pasta in a colander.|パスタをざるにあけて。
+H||kettle|やかん、電気ケトル|a pot for boiling water|Put the kettle on.|お湯を沸かして。
+H||stove|コンロ|the top of a cooker where pots are heated|Don't leave the stove on.|コンロをつけっぱなしにしないで。
+H|*|range hood|（台所の）換気扇|a fan above the stove that removes smoke|Turn on the range hood when you fry.|揚げ物の時は換気扇を回して。
+H||cupboard|食器棚、戸棚|a cabinet with shelves and doors|The cups are in the top cupboard.|コップは上の戸棚にある。
+H|*|pantry|食品庫|a small room or cupboard for storing food|We keep rice in the pantry.|米は食品庫に置いている。
+H|*|leftovers|残り物|food not eaten at a meal, kept for later|We had leftovers for lunch.|昼は残り物を食べた。
+H||microwave|電子レンジ（で温める）|an oven using radio waves; to heat in one|Microwave it for two minutes.|レンジで2分温めて。
+H||dishwasher|食洗機|a machine that washes dishes|Load the dishwasher, please.|食洗機に食器を入れて。
+H||do the dishes|皿洗いをする|to wash plates and cups after a meal|It's your turn to do the dishes.|今日は君が皿洗いの番だ。
+H||wipe|拭く|to clean a surface with a cloth|Wipe the table after dinner.|夕食後テーブルを拭いて。
+H|*|rinse|すすぐ、ゆすぐ|to wash with clean water to remove soap|Rinse the cup before using it.|使う前にコップをすすいで。
+H|*|soak|浸け置きする|to leave something in liquid|Let the pan soak overnight.|鍋は一晩浸けておいて。
+H|*|scrub|ごしごしこする|to clean by rubbing hard|Scrub the bathtub with a brush.|ブラシで浴槽をこすって。
+H||sponge|スポンジ|a soft object for washing|This sponge is getting old.|このスポンジはもう古い。
+H|*|detergent|洗剤|soap for washing dishes or clothes|We're out of laundry detergent.|洗濯洗剤が切れた。
+H|*|plastic wrap|ラップ（cling film は英国）|thin plastic for covering food|Cover the bowl with plastic wrap.|ボウルにラップをかけて。
+H||aluminum foil|アルミホイル|thin metal sheet for cooking|Wrap the fish in aluminum foil.|魚をホイルで包んで。
+H|*|food container|保存容器（Tupperware は商標）|a box for storing food|Put the curry in a food container.|カレーを保存容器に入れて。
+H||trash can|ゴミ箱（米。英国は bin）|a container for garbage|The trash can is full.|ゴミ箱がいっぱいだ。
+H|*|burnable trash|可燃ごみ|garbage that can be burned|Burnable trash goes out on Tuesday.|可燃ごみは火曜日。
+H||recycling|リサイクル、資源ごみ|collecting used items to reuse|Cans go in the recycling.|缶は資源ごみへ。
+H||take out the trash|ゴミを出す|to carry garbage outside for collection|Can you take out the trash?|ゴミ出ししてくれる？
+H||doormat|玄関マット|a mat at the door to wipe shoes|Wipe your feet on the doormat.|玄関マットで足をふいて。
+H|*|entryway|玄関（ホール）|the area just inside the front door|Leave your shoes in the entryway.|靴は玄関に置いて。
+H|*|shoe cabinet|下駄箱|a cupboard for shoes|The shoe cabinet is full.|下駄箱がいっぱいだ。
+H||hallway|廊下|a passage between rooms|The bathroom is down the hallway.|トイレは廊下の先です。
+H|*|banister|（階段の）手すり|the rail along the side of stairs|Hold the banister on the stairs.|階段では手すりにつかまって。
+H||closet|クローゼット、押入れ|a small room or cupboard for clothes|Hang your coat in the closet.|コートはクローゼットに掛けて。
+H||drawer|引き出し|a box that slides in and out of furniture|The scissors are in the top drawer.|はさみは一番上の引き出し。
+H||hanger|ハンガー|a frame for hanging clothes|Put the shirt on a hanger.|シャツをハンガーに掛けて。
+H||do the laundry|洗濯する|to wash clothes|I do the laundry on Sundays.|日曜に洗濯する。
+H|*|hang out the laundry|洗濯物を干す|to put wet clothes outside to dry|It might rain, so don't hang out the laundry.|雨が降りそうだから洗濯物は干さないで。
+H||fold|たたむ|to bend cloth or paper neatly|Can you fold the towels?|タオルをたたんでくれる？
+H||iron|アイロン（をかける）|a hot tool for removing creases|I need to iron my shirt.|シャツにアイロンをかけないと。
+H|*|fabric softener|柔軟剤|liquid that makes washed clothes soft|This fabric softener smells nice.|この柔軟剤いい匂い。
+H||bleach|漂白剤|a chemical that whitens and cleans|Don't mix bleach with other cleaners.|漂白剤を他の洗剤と混ぜないで。
+H|*|lint|糸くず、毛玉くず|small bits of fiber from cloth|Clean the lint filter in the dryer.|乾燥機の糸くずフィルターを掃除して。
+H||vacuum|掃除機（をかける）|to clean floors with a machine that sucks dust|I vacuumed the living room.|リビングに掃除機をかけた。
+H|*|dustpan|ちりとり|a flat pan for collecting swept dirt|Hand me the broom and dustpan.|ほうきとちりとりを取って。
+H||broom|ほうき|a brush with a long handle for sweeping|The broom is behind the door.|ほうきはドアの裏。
+H||mop|モップ（で拭く）|a stick with cloth for washing floors|Mop the kitchen floor.|台所の床をモップで拭いて。
+H||dust|ほこり／ほこりを払う|fine dirt; to remove it|Dust the shelves once a week.|棚のほこりは週に1回払って。
+H|*|clutter|散らかった物|many things lying in an untidy way|My desk is covered in clutter.|机がごちゃごちゃだ。
+H||tidy up|片付ける|to make a place neat|Tidy up your room before dinner.|夕食前に部屋を片付けて。
+H|*|declutter|不要品を処分する、断捨離|to remove things you don't need|I decluttered my closet this weekend.|週末にクローゼットを断捨離した。
+H||couch|ソファ（= sofa）|a long soft seat|He fell asleep on the couch.|彼はソファで寝てしまった。
+H||rug|ラグ、敷物|a small carpet|We bought a new rug.|新しいラグを買った。
+H||blinds|ブラインド|window covers made of slats|Close the blinds, it's too bright.|まぶしいからブラインドを閉めて。
+H|*|outlet|コンセント（英国 socket）。consent は「同意」|a place in the wall to plug things in|Is there an outlet near the bed?|ベッドの近くにコンセントある？
+H|*|power strip|電源タップ|a strip with several outlets|Plug it into the power strip.|電源タップに挿して。
+H||extension cord|延長コード|a long cord to reach far outlets|We need an extension cord.|延長コードが必要だ。
+H||light switch|電気のスイッチ|a switch that turns lights on and off|The light switch is by the door.|スイッチはドアの横。
+H||light bulb|電球|the glass part of a lamp that gives light|The light bulb burned out.|電球が切れた。
+H||remote|リモコン|a device to control a TV from a distance|Where's the remote?|リモコンどこ？
+H|*|thermostat|温度設定器|a device that controls room temperature|Turn the thermostat down.|設定温度を下げて。
+H|*|humidifier|加湿器|a machine that adds moisture to air|Turn on the humidifier in winter.|冬は加湿器をつけて。
+H||bathtub|浴槽|a large container to bathe in|The bathtub is still full.|浴槽にまだお湯が入っている。
+H|*|run a bath|お風呂を入れる|to fill a bathtub with water|I'll run a bath for you.|お風呂入れておくね。
+H||towel rack|タオル掛け|a bar for hanging towels|Hang the towel on the rack.|タオルはタオル掛けに。
+H|*|flush|（トイレを）流す|to clean a toilet with a rush of water|Don't forget to flush.|流すのを忘れないで。
+H|*|clogged|詰まった|blocked so liquid can't pass|The toilet is clogged.|トイレが詰まった。
+H|*|plunger|ラバーカップ（すっぽん）|a rubber cup on a stick for unblocking drains|Get the plunger, quick!|早くすっぽん持ってきて！
+H||mold|カビ|fungus that grows in damp places|There's mold in the bathroom.|風呂場にカビがある。
+H||leak|水漏れ（する）|to let liquid escape through a hole|The roof is leaking.|屋根が雨漏りしている。
+H||sink|流し、洗面台|a basin with a tap|Leave the cups in the sink.|コップは流しに置いといて。
+H|*|vanity|洗面台（化粧台付き）|a bathroom sink built into a cabinet|The hair dryer is under the vanity.|ドライヤーは洗面台の下。
+H||floss|デンタルフロス（を使う）|thread for cleaning between teeth|Floss every night.|毎晩フロスして。
+H||bedding|寝具|sheets, blankets, pillows|Wash the bedding weekly.|寝具は毎週洗って。
+H||pillowcase|枕カバー|a cloth cover for a pillow|Change the pillowcase.|枕カバーを替えて。
+H|*|duvet|掛け布団（羽毛布団）|a thick soft quilt|It's cold; get the winter duvet out.|寒いから冬の掛け布団を出して。
+H||make the bed|ベッドを整える|to arrange the sheets neatly|Make your bed every morning.|毎朝ベッドを整えて。
+H|*|hit the snooze button|スヌーズを押す、二度寝する|to delay an alarm for a few minutes|I hit the snooze button three times.|3回スヌーズした。
+H||oversleep|寝坊する|to sleep later than planned|I overslept and missed the bus.|寝坊してバスに乗り遅れた。
+H||doze off|うとうと眠る|to fall asleep lightly|I dozed off on the sofa.|ソファでうたた寝した。
+H||nap|昼寝（する）|a short sleep in the day|Take a quick nap.|ちょっと昼寝しなよ。
+H|*|chores|家事、雑用|regular jobs around the house|We split the chores.|家事は分担している。
+H||groceries|食料品（の買い物）|food and household items bought regularly|I'll pick up groceries on the way home.|帰りに食料品を買ってくる。
+H|*|utility bill|公共料金の請求書|bill for gas, water, electricity|The utility bill was high this month.|今月は光熱費が高かった。
+H||landlord|大家|a person who rents out a home|Call the landlord about the leak.|雨漏りのことで大家に電話して。
+H||rent|家賃／借りる|money paid to live in a place|Rent is due on the 25th.|家賃は25日払い。
+H|*|intercom|インターホン（interphone は和製英語）|a system to talk to someone at the door|Someone's on the intercom.|インターホンに誰か来てる。
+H|*|spare key|合鍵|an extra copy of a key|I keep a spare key at my mom's.|合鍵は母の家に置いてある。
+H|*|lock up|戸締まりをする|to lock all doors before leaving|Don't forget to lock up.|戸締まりを忘れずに。
+H|*|stained|しみのついた|marked with a stain that won't come off|My shirt is stained with curry.|シャツにカレーのしみがついた。
+H||apron|エプロン|cloth worn over clothes while cooking|Put on an apron.|エプロンをつけて。
+H|*|preheat|予熱する|to heat an oven before use|Preheat the oven to 180°C.|オーブンを180°Cに予熱して。
+H|*|thaw|解凍する（= defrost）|to let frozen food become soft|Thaw the chicken overnight.|鶏肉は一晩かけて解凍して。
+H|*|simmer|弱火で煮込む|to cook gently just below boiling|Let it simmer for 20 minutes.|20分弱火で煮込んで。
+H||peel|皮をむく／皮|to remove the skin of fruit|Peel the potatoes.|じゃがいもの皮をむいて。
+H|*|spill|こぼす|to let liquid fall out by accident|I spilled coffee on the rug.|ラグにコーヒーをこぼした。
+H|*|crumbs|食べかす、パンくず|tiny pieces of bread or food|There are crumbs all over the couch.|ソファが食べかすだらけ。
+H|*|lukewarm|ぬるい|only slightly warm|The bath water is lukewarm.|お風呂がぬるい。
+H|*|boil over|ふきこぼれる|to overflow while boiling|Watch the pot so it doesn't boil over.|ふきこぼれないよう鍋を見てて。
+T|*|ticket gate|改札|the gate where you scan your ticket|Meet me at the ticket gate.|改札で待ち合わせよう。
+T||ticket machine|券売機|a machine that sells tickets|Buy a ticket from the machine.|券売機で切符を買って。
+T||fare|運賃|the price of a ride|The fare is 210 yen.|運賃は210円。
+T|*|top up|（ICカードに）チャージする（charge は通じにくい）|to add money to a card|I need to top up my IC card.|ICカードにチャージしなきゃ。
+T|*|commuter pass|定期券|a ticket for regular trips over a period|My commuter pass expires tomorrow.|定期が明日切れる。
+T||platform|ホーム（乗り場）|the area where you wait for a train|The train leaves from platform 3.|電車は3番線から出る。
+T|*|bound for|〜行き|going toward a place|This train is bound for Tokyo.|この電車は東京行きです。
+T|*|local train|各駅停車|a train that stops at every station|Take the local; the express skips our station.|各停に乗って、急行は止まらないから。
+T||rapid|快速|a fast train skipping some stations|The rapid is faster.|快速の方が早い。
+T||limited express|特急|a very fast train with extra fare|The limited express needs a ticket.|特急は特急券が必要。
+T||transfer|乗り換える（= change trains）|to change from one train to another|Transfer at Shinjuku.|新宿で乗り換えて。
+T||last train|終電|the final train of the night|I missed the last train.|終電を逃した。
+T||first train|始発|the first train of the morning|I took the first train home.|始発で帰った。
+T||rush hour|ラッシュアワー|the busiest time for travel|Avoid rush hour if you can.|できればラッシュは避けて。
+T|*|packed|すし詰めの、満員の（= jam-packed）|extremely crowded|The train was packed.|電車はぎゅうぎゅうだった。
+T||priority seat|優先席|seats for elderly, pregnant, or disabled people|Give up the priority seat.|優先席を譲って。
+T|*|mind the gap|足元にご注意（電車とホームの隙間）|be careful of the space between train and platform|Mind the gap when you get off.|降りる時は隙間に注意。
+T|*|stand clear of the doors|ドアから離れてください|step away from the closing doors|Please stand clear of the doors.|ドアから離れてください。
+T||delay|遅延（する）|a period when something is late|There's a ten-minute delay.|10分の遅れがある。
+T|*|service is suspended|運転見合わせ|trains have stopped running for now|Service is suspended due to heavy rain.|大雨で運転を見合わせている。
+T|*|signal failure|信号トラブル|a problem with railway signals|Delays due to a signal failure.|信号トラブルによる遅延。
+T|*|not in service|回送|a train that carries no passengers|This train is not in service.|この電車は回送です。
+T||terminal|終点、ターミナル|the last station on a line|Get off at the terminal.|終点で降りて。
+T||get off|降りる|to leave a train or bus|I get off at the next stop.|次で降ります。
+T||miss the train|乗り遅れる|to arrive too late for a train|Hurry or we'll miss the train.|急がないと乗り遅れる。
+T||round trip|往復|a journey there and back|A round-trip ticket, please.|往復切符をください。
+T||one-way|片道|going in one direction only|Just one-way, please.|片道でお願いします。
+T||reserved seat|指定席|a seat booked in advance|I have a reserved seat in car 7.|7号車の指定席だ。
+T|*|non-reserved seat|自由席|a seat anyone can take|Non-reserved seats are in cars 1 to 3.|自由席は1〜3号車。
+T|*|concourse|コンコース（駅構内の広場）|a large open area in a station|Let's meet in the central concourse.|中央コンコースで会おう。
+T|*|lost and found|遺失物取扱所|place where lost items are kept|Ask at the lost and found.|忘れ物取扱所で聞いて。
+T||conductor|車掌|the person in charge on a train|The conductor checked our tickets.|車掌が切符を確認した。
+T||coin locker|コインロッカー|a locker you pay to use|Leave your bag in a coin locker.|荷物はコインロッカーに。
+T||timetable|時刻表（= schedule）|a list of departure times|Check the timetable.|時刻表を見て。
+T|*|departure board|発車案内板|a screen showing train times|Look at the departure board.|発車案内を見て。
+T|*|car|（電車の）〜号車|one section of a train|We're in car 5.|5号車にいる。
+T||women-only car|女性専用車|a car reserved for women|This is a women-only car until 9:30.|9時半まで女性専用車です。
+T|*|overhead rack|網棚|a shelf above the seats for bags|Put your bag on the overhead rack.|かばんは網棚に。
+T|*|strap|つり革（= hand strap）|a loop to hold while standing|Hold onto the strap.|つり革につかまって。
+T||kiosk|売店|a small shop in a station|I bought water at the kiosk.|売店で水を買った。
+T|*|bullet train|新幹線|a high-speed train|We took the bullet train to Kyoto.|新幹線で京都へ行った。
+T|*|fare adjustment machine|精算機|a machine to pay a missing fare|Use the fare adjustment machine.|精算機を使って。
+T||commute|通勤（する）|to travel to work or school regularly|My commute takes an hour.|通勤に1時間かかる。
+T|*|which exit|何番出口|asking about the station exit|Which exit is closest to the museum?|美術館に一番近いのは何番出口？
+T|*|get on the wrong train|乗り間違える|to board a train going the wrong way|I got on the wrong train.|電車を乗り間違えた。
+T|*|ride past|乗り過ごす（= miss one's stop）|to go past the station you wanted|I fell asleep and rode past my stop.|寝て乗り過ごした。
+T|*|platform door|ホームドア|safety gates on the platform edge|Wait behind the platform doors.|ホームドアの内側で待って。
+T||crowded|混んでいる|full of people|The station is always crowded.|駅はいつも混んでいる。
+T|*|interchange|乗換駅|a station where lines meet|Ueno is a big interchange.|上野は大きな乗換駅だ。
+T|*|seat hog|席を独占する人|someone taking up more than one seat|Don't be a seat hog.|席を占領しないで。
+O||crosswalk|横断歩道（英国 zebra crossing）|a marked place to cross a road|Cross at the crosswalk.|横断歩道を渡って。
+O||pedestrian|歩行者|a person walking on a street|Watch out for pedestrians.|歩行者に注意。
+O||sidewalk|歩道（英国 pavement）|a path beside a road for walking|Ride on the road, not the sidewalk.|歩道じゃなく車道を走って。
+O|*|curb|（歩道の）縁石|the edge between sidewalk and road|Pull over to the curb.|縁石に寄せて止めて。
+O||intersection|交差点|where two roads cross|Turn left at the next intersection.|次の交差点を左。
+O||traffic light|信号|lights that control traffic|Wait for the traffic light.|信号を待って。
+O|*|jaywalk|信号無視して道路を渡る|to cross a street illegally|Don't jaywalk here.|ここで信号無視して渡らないで。
+O|*|honk|クラクションを鳴らす（klaxon は古い）|to sound a car horn|The taxi honked at us.|タクシーにクラクションを鳴らされた。
+O|*|detour|迂回（路）|a different route avoiding a problem|Take a detour; the road is closed.|通行止めだから迂回して。
+O||road work|道路工事|repair work on a road|Road work is causing traffic.|道路工事で渋滞している。
+O|*|speed bump|減速帯|a raised part of a road that slows cars|Slow down for the speed bump.|減速帯で速度を落として。
+O|*|pothole|道路の穴|a hole in a road surface|My bike hit a pothole.|自転車が道の穴にはまった。
+O|*|pedestrian bridge|歩道橋（= overpass）|a bridge for people to cross a road|Use the pedestrian bridge.|歩道橋を使って。
+O||underpass|地下道|a passage under a road|Go through the underpass.|地下道を通って。
+O||dead end|行き止まり|a road with no way out|This street is a dead end.|この道は行き止まりだ。
+O||landmark|目印|an easy-to-see place used for directions|Is there a landmark nearby?|近くに目印ある？
+O|*|alley|路地|a narrow street between buildings|The café is down a small alley.|カフェは小さな路地の先にある。
+O||block|街区、ブロック|the distance between two streets|It's two blocks away.|2ブロック先です。
+O||parking lot|駐車場（英国 car park）|an area for parking cars|The parking lot is full.|駐車場は満車。
+O|*|gas station|ガソリンスタンド（gasoline stand は和製英語）|a place to buy fuel|Stop at the gas station.|ガソリンスタンドに寄って。
+O|*|flat tire|パンク（punk は別の意味）|a tire with no air|I got a flat tire.|タイヤがパンクした。
+O|*|tow|レッカー移動する|to pull a vehicle away|My car got towed.|車をレッカーされた。
+O||bike lane|自転車レーン|a lane for bicycles|Stay in the bike lane.|自転車レーンを走って。
+O||streetlight|街灯|a light on a pole by a road|The streetlight is broken.|街灯が壊れている。
+O|*|utility pole|電柱|a pole holding power lines|The car hit a utility pole.|車が電柱にぶつかった。
+O||vending machine|自販機|a machine selling drinks or snacks|Get a drink from the vending machine.|自販機で飲み物を買って。
+O||playground|（遊具のある）遊び場|an outdoor area with equipment for kids|The kids are at the playground.|子どもたちは遊び場にいる。
+O|*|swing|ブランコ|a seat hanging on chains|Push me on the swing!|ブランコ押して！
+O||slide|滑り台|a slope for children to slide down|She went down the slide.|彼女は滑り台を滑った。
+O|*|sandbox|砂場（英国 sandpit）|a box of sand for kids to play in|They're building castles in the sandbox.|砂場でお城を作っている。
+O|*|jungle gym|ジャングルジム（= climbing frame）|a metal climbing frame|He climbed to the top of the jungle gym.|ジャングルジムのてっぺんに登った。
+O||fountain|噴水|a structure that sprays water|Let's meet by the fountain.|噴水のそばで会おう。
+O|*|drinking fountain|水飲み場|a device that gives drinking water|Is there a drinking fountain?|水飲み場ある？
+O|*|litter|ポイ捨て（する）、ゴミ|trash left on the ground|No littering.|ポイ捨て禁止。
+O|*|keep off the grass|芝生に入らないで|a sign telling people not to walk on grass|The sign says "Keep off the grass."|「芝生立入禁止」と書いてある。
+O||stroll|ぶらぶら歩く|to walk slowly for pleasure|We strolled through the park.|公園をぶらぶらした。
+O|*|leash|（犬の）リード|a strap to hold a dog|Keep your dog on a leash.|犬はリードにつないで。
+O|*|poop bag|フン袋|a bag for picking up dog waste|Always carry poop bags.|フン袋は必ず持って。
+O|*|stray|野良の（動物）|a pet without a home|A stray cat lives near the station.|駅の近くに野良猫がいる。
+O||puddle|水たまり|a small pool of rainwater|Don't step in the puddle.|水たまりを踏まないで。
+O||shade|日陰|area out of the sun|Let's sit in the shade.|日陰に座ろう。
+O|*|heatstroke|熱中症|illness from too much heat|Drink water to avoid heatstroke.|熱中症予防に水を飲んで。
+O||sunburn|日焼け（ひりひりする）|red painful skin from the sun|I got a bad sunburn.|ひどく日焼けした。
+O|*|drizzle|霧雨（が降る）|light fine rain|It's just drizzling.|小雨がぱらついているだけ。
+O|*|downpour|土砂降り|heavy sudden rain|We got caught in a downpour.|土砂降りにあった。
+O|*|checkout|レジ（会計場所）（register はレジ機）|the place where you pay in a shop|Pay at the checkout.|レジで払って。
+O||cashier|レジ係|a person who takes payment|The cashier gave me a receipt.|レジ係がレシートをくれた。
+O||receipt|レシート、領収書|paper proving you paid|Keep the receipt.|レシートは取っておいて。
+O||change|おつり、小銭|money returned after paying|Here's your change.|おつりです。
+O|*|aisle|（商品棚の）通路|a passage between shelves|Rice is in aisle 4.|お米は4番通路です。
+O||in stock|在庫あり|available in the shop|Is this in stock?|これ在庫ありますか？
+O||out of stock|品切れ|not available right now|Sorry, it's out of stock.|すみません、品切れです。
+O||on sale|セール中|sold at a lower price|These shoes are on sale.|この靴はセール中。
+O|*|point card|ポイントカード（= loyalty card）|a card that collects points|Do you have a point card?|ポイントカードお持ちですか？
+O||refund|返金|money returned to a customer|Can I get a refund?|返金してもらえますか？
+O||return|返品（する）|to bring an item back|I'd like to return this.|これを返品したいです。
+O|*|fitting room|試着室|a room in a shop to try on clothes|The fitting room is over there.|試着室はあちらです。
+O||try on|試着する|to put on clothes to check them|Can I try this on?|これ試着できますか？
+O|*|browse|（買わずに）見て回る|to look at goods without a clear plan|I'm just browsing, thanks.|見てるだけです。
+O||cart|カート（英国 trolley）|a wheeled basket for shopping|Grab a cart.|カート取って。
+O|*|line up|並ぶ（英国 queue）|to stand in a line|We lined up for an hour.|1時間並んだ。
+O|*|cut in line|列に割り込む|to join a line ahead of others|Hey, don't cut in line!|ちょっと、割り込まないで！
+O|*|expiration date|消費・賞味期限（英国 use-by / best-before）|the date after which food shouldn't be eaten|Check the expiration date.|期限を確認して。
+O|*|bargain|お買い得（品）|something sold cheaply|This jacket was a real bargain.|このジャケットは本当にお買い得だった。
+O|*|haggle|値切る|to argue about price|You can haggle at the flea market.|フリマでは値切れる。
+O||price tag|値札|a label showing the price|The price tag is missing.|値札がない。
+O||pharmacy|薬局|a shop that sells medicine|Is there a pharmacy near here?|この近くに薬局ある？
+O|*|prescription|処方箋|a doctor's note for medicine|I need to fill a prescription.|処方箋の薬をもらわないと。
+O||post office|郵便局|place for sending mail|The post office closes at five.|郵便局は5時に閉まる。
+O||package|小包、荷物（英国 parcel）|a wrapped item sent by mail|A package came for you.|荷物が届いてるよ。
+O|*|to go|持ち帰りで（= takeout）|food taken away from a restaurant|For here or to go?|店内ですか、お持ち帰りですか？
+O|*|for here|店内で|eating inside the restaurant|For here, please.|店内で。
+O||reservation|予約|an arrangement to keep a table|I have a reservation for two.|2名で予約してます。
+O|*|check|お会計、伝票（英国 bill）|the bill at a restaurant|Can I get the check, please?|お会計お願いします。
+O|*|split the bill|割り勘する|to share the cost equally|Let's split the bill.|割り勘にしよう。
+O|*|refill|おかわり|another serving of a drink|Free refills on coffee.|コーヒーおかわり自由。
+O|*|straw|ストロー|a tube for drinking|No straw, please.|ストローはいらないです。
+O|*|withdraw|（お金を）引き出す|to take money from an account|I need to withdraw some cash.|現金を下ろさないと。
+O||convenience store|コンビニ|a small shop open long hours|I'll grab lunch at the convenience store.|コンビニで昼ごはん買ってくる。
+O|*|loiter|うろつく、たむろする|to stand around without purpose|No loitering.|たむろ禁止。
+O|*|U-turn|Uターン|turning to go back the way you came|No U-turns here.|ここはUターン禁止。
+O|*|roundabout|環状交差点（米 traffic circle）|a circular intersection|Take the second exit at the roundabout.|ロータリーの2番目の出口へ。
+O|*|traffic jam|渋滞|many cars moving slowly|We got stuck in a traffic jam.|渋滞にはまった。
+O|*|pull over|（車を）路肩に止める|to stop at the side of the road|The police told us to pull over.|警察に車を止めるよう言われた。
+O|*|picnic blanket|レジャーシート（leisure sheet は和製英語）|a sheet to sit on outdoors|Bring a picnic blanket.|レジャーシート持ってきて。
+O|*|bike rack|駐輪場、自転車スタンド|a frame for parking bicycles|Lock your bike to the bike rack.|自転車は駐輪ラックに鍵をかけて。
+O|*|pickpocket|スリ（人）|someone who steals from pockets|Beware of pickpockets.|スリに注意。
+O|*|street vendor|露店商|a person selling things on the street|I bought takoyaki from a street vendor.|屋台でたこ焼きを買った。
+O|*|food stall|屋台|a small stand selling food|The festival had many food stalls.|祭りには屋台がたくさんあった。
+O||shortcut|近道|a quicker way|Let's take a shortcut.|近道しよう。
+O||get lost|道に迷う|to not know where you are|I got lost on the way.|途中で道に迷った。
+O|*|ask for directions|道を尋ねる|to ask someone how to get somewhere|Let's ask for directions.|道を聞こう。
+O|*|across from|〜の向かいに|on the opposite side of the street|The bank is across from the station.|銀行は駅の向かい。
+O|*|kitty-corner|斜め向かいに（= catty-corner）|diagonally across an intersection|The café is kitty-corner from the bank.|カフェは銀行の斜め向かい。
+O|*|errand|用事、使い走り|a short trip to do a task|I have to run some errands.|ちょっと用事を済ませてくる。
+O|*|window-shopping|ウィンドウショッピング|looking at goods without buying|We went window-shopping.|ウィンドウショッピングした。
+O|*|clearance sale|在庫一掃セール|a sale to get rid of old stock|Everything is 50% off in the clearance sale.|在庫一掃セールで全品半額。
+O|*|self-checkout|セルフレジ|a machine where you pay yourself|Use the self-checkout.|セルフレジを使って。
+O|*|paper or plastic|紙袋かビニール袋か|cashier asking which bag you want|Paper or plastic?|紙袋とレジ袋どちらにしますか？
+O|*|keep the change|おつりはいりません|tell someone not to return the change|Keep the change.|おつりは取っておいて。
+K||attendance|出席|being present at class|Attendance is 30% of the grade.|出席は成績の30%。
+K|*|tardy|遅刻した|late for class|Three tardies count as one absence.|遅刻3回で欠席1回。
+K||absent|欠席の|not present|He was absent yesterday.|彼は昨日休んだ。
+K|*|roll call|出欠確認、点呼|calling names to check attendance|The teacher took roll call.|先生が出席を取った。
+K||homeroom|ホームルーム|class period for announcements|Homeroom starts at 8:30.|ホームルームは8時半から。
+K||syllabus|シラバス|outline of a course|Check the syllabus for due dates.|締切はシラバスを見て。
+K||lecture|講義|a talk given to students|The lecture was boring.|講義は退屈だった。
+K|*|seminar|ゼミ|a small discussion class|My seminar meets on Thursdays.|ゼミは木曜。
+K|*|required course|必修科目|a class you must take|Statistics is a required course.|統計は必修だ。
+K|*|elective|選択科目|a class you choose to take|I took French as an elective.|選択でフランス語を取った。
+K||assignment|課題|work given to students|The assignment is due Friday.|課題は金曜締切。
+K||due|締切の|expected to be submitted at a time|When is the report due?|レポートいつまで？
+K||hand in|提出する（= submit）|to give work to a teacher|Hand in your papers.|答案を提出して。
+K|*|extension|（締切の）延長|extra time to finish|Can I get an extension?|延長してもらえますか？
+K||midterm|中間試験|exam in the middle of a term|I have two midterms tomorrow.|明日中間が2つある。
+K|*|quiz|小テスト（「クイズ」だけではない）|a short test|We have a vocab quiz today.|今日単語テストがある。
+K|*|pop quiz|抜き打ちテスト|a surprise test|The teacher gave us a pop quiz.|抜き打ちテストがあった。
+K|*|cram|一夜漬けする、詰め込む|to study a lot in a short time|I crammed all night.|一晩中詰め込んだ。
+K|*|pull an all-nighter|徹夜する|to stay awake all night|I pulled an all-nighter for the exam.|試験で徹夜した。
+K|*|transcript|成績証明書|an official record of grades|Send your transcript with the application.|応募書類と一緒に成績証明書を送って。
+K|*|tuition|授業料|money paid for classes|Tuition went up again.|授業料がまた上がった。
+K||scholarship|奨学金|money given to help a student|She got a full scholarship.|彼女は全額奨学金をもらった。
+K|*|enroll|入学する、履修登録する|to officially join a school or course|I enrolled in three classes.|3科目に登録した。
+K|*|drop a class|履修を取り消す|to stop taking a course|I dropped the class.|その授業は取り消した。
+K||major|専攻（する）|main subject of study|I'm majoring in information engineering.|情報工学専攻です。
+K|*|thesis|卒業論文、学位論文|a long research paper for a degree|I'm writing my thesis.|卒論を書いている。
+K|*|advisor|指導教員|a professor who guides your research|My advisor checked my draft.|指導教員が下書きを見てくれた。
+K|*|freshman|1年生（sophomore 2年、junior 3年、senior 4年）|a first-year student|I'm a senior this year.|今年4年生です。
+K||dorm|寮（dormitory）|a building where students live|I live in the dorm.|寮に住んでいる。
+K||cafeteria|学食|a self-service dining hall|Let's eat at the cafeteria.|学食で食べよう。
+K|*|club|部活・サークル（circle は和製英語）|a student group for an activity|I'm in the tennis club.|テニス部に入っている。
+K|*|extracurricular|課外活動の|outside the regular courses|Extracurricular activities look good on a resume.|課外活動は履歴書で評価される。
+K|*|commencement|卒業式（= graduation ceremony）|the ceremony when students graduate|Commencement is in March.|卒業式は3月。
+K|*|alumni|卒業生（単数 alumnus）|former students of a school|Many alumni work in tech.|多くの卒業生がIT業界で働いている。
+K|*|plagiarism|盗用、剽窃|copying someone else's work as your own|Plagiarism means automatic failure.|盗用は即不合格。
+K|*|cheat|カンニングする（cunning は「ずる賢い」）|to break the rules on a test|He was caught cheating.|彼はカンニングで捕まった。
+K|*|ace|（テストで）満点・高得点を取る|to do extremely well|I aced the final!|期末で満点取った！
+K|*|flunk|落第する、単位を落とす|to fail a test or class|I almost flunked math.|数学を落としかけた。
+K|*|office hours|オフィスアワー（質問受付時間）|times a professor is available to students|Come to my office hours.|オフィスアワーに来なさい。
+K|*|handout|配布資料（print は和製英語的）|paper given out in class|Take a handout and pass the rest back.|プリントを1枚取って後ろに回して。
+K||eraser|消しゴム／黒板消し|a tool for removing pencil or chalk|Can I borrow your eraser?|消しゴム貸して。
+K|*|highlighter|蛍光ペン（marker は太字ペン全般）|a bright pen for marking text|Mark key points with a highlighter.|要点を蛍光ペンで引いて。
+K|*|mechanical pencil|シャーペン（sharp pencil は和製英語）|a pencil with refillable lead|I need lead for my mechanical pencil.|シャーペンの芯が要る。
+K|*|correction tape|修正テープ|tape for covering mistakes|Do you have correction tape?|修正テープある？
+K|*|stapler|ホッチキス（Hotchkiss は商標由来の和製英語）|a tool that joins paper with metal|Staple the pages together.|ホッチキスで留めて。
+K||presentation|発表、プレゼン|a talk to share information|I have a presentation tomorrow.|明日発表がある。
+K|*|group work|グループワーク|work done in a team|We had group work in class.|授業でグループワークをした。
+K|*|semester|学期（2学期制）|half of a school year|The fall semester starts in October.|後期は10月から。
+K|*|skip class|授業をサボる|to not go to class on purpose|Don't skip class.|授業をサボるな。
+K|*|valedictorian|首席卒業生|the top student who speaks at graduation|She was the valedictorian.|彼女は首席卒業だった。
+W|*|clock in|出勤を記録する（clock out = 退勤）|to record the time you start work|Don't forget to clock in.|出勤打刻を忘れずに。
+W||overtime|残業|work beyond normal hours|I did three hours of overtime.|3時間残業した。
+W|*|paid leave|有給休暇（PTO = paid time off）|days off with pay|I'm taking paid leave next week.|来週有給を取る。
+W||sick leave|病気休暇|time off for illness|She's on sick leave.|彼女は病欠中。
+W||day off|休み|a day you don't work|Tomorrow is my day off.|明日は休み。
+W|*|work from home|在宅勤務する（WFH）|to do your job at home|I work from home on Fridays.|金曜は在宅勤務。
+W||agenda|議題、協議事項|a list of things to discuss|What's on the agenda?|議題は何？
+W|*|minutes|議事録|a written record of a meeting|Who's taking the minutes?|議事録は誰が取る？
+W|*|follow up|追って連絡する、フォローする|to contact again about something|I'll follow up by email.|メールで追って連絡します。
+W|*|reply all|全員に返信|to answer everyone on an email|Please don't reply all.|全員返信はやめて。
+W||attachment|添付ファイル|a file sent with an email|See the attachment.|添付をご覧ください。
+W|*|as per|〜に従って、〜の通り|according to|As per our discussion, here's the file.|打ち合わせの通り、ファイルを送ります。
+W|*|FYI|参考までに（for your information）|for your information|FYI, the meeting moved to 3.|参考まで、会議は3時に変更。
+W|*|heads-up|事前の知らせ|a warning or advance notice|Thanks for the heads-up.|事前に教えてくれてありがとう。
+W|*|loop in|（話に）加える、共有する|to include someone in communication|Can you loop in the sales team?|営業チームも入れてくれる？
+W|*|circle back|後で改めて話す|to return to a topic later|Let's circle back on this tomorrow.|これは明日また話そう。
+W|*|bandwidth|（人の）余力、キャパ|capacity to take on work|I don't have the bandwidth for this.|これを引き受ける余裕がない。
+W|*|on the same page|認識が一致して|in agreement, understanding the same thing|Let's make sure we're on the same page.|認識を合わせておこう。
+W|*|ballpark figure|おおよその数字|a rough estimate|Can you give me a ballpark figure?|ざっくりした数字をくれる？
+W||proposal|提案（書）|a formal plan or suggestion|Send me the proposal by Monday.|月曜までに提案書を送って。
+W|*|invoice|請求書|a document asking for payment|We sent the invoice yesterday.|請求書は昨日送った。
+W|*|quote|見積もり（= estimate）|a price offered for a job|Can you send us a quote?|見積もりを送ってもらえますか？
+W|*|expense report|経費精算書|a form listing work costs to be paid back|Submit your expense report.|経費精算を出して。
+W|*|reimburse|（経費を）払い戻す|to pay back money someone spent|The company will reimburse you.|会社が払い戻してくれる。
+W||business card|名刺|a small card with your contact details|Here's my business card.|名刺です。
+W|*|vendor|取引業者、ベンダー|a company that sells to your company|We're switching vendors.|業者を切り替える。
+W||colleague|同僚（= coworker）|a person you work with|My colleague covered for me.|同僚が代わってくれた。
+W|*|supervisor|上司（boss より客観的）|the person in charge of your work|Ask your supervisor.|上司に聞いて。
+W|*|direct report|直属の部下|a person who reports to you|She has five direct reports.|彼女には部下が5人いる。
+W|*|onboarding|新人受け入れ・研修|process of welcoming new staff|Onboarding takes two weeks.|新人研修は2週間。
+W||performance review|人事評価|a formal check of your work|My performance review is next week.|来週人事評価がある。
+W||promotion|昇進|moving to a higher job|She got a promotion.|彼女は昇進した。
+W|*|transfer|異動、転勤|moving to another department or office|He was transferred to Osaka.|彼は大阪に転勤になった。
+W||resign|辞任する、辞める|to formally leave a job|He resigned last month.|彼は先月辞めた。
+W|*|hand over|引き継ぐ|to give your work to someone else|I'll hand over my tasks before I leave.|辞める前に業務を引き継ぐ。
+W|*|paper jam|紙詰まり|paper stuck in a printer|The printer has a paper jam again.|プリンターがまた紙詰まり。
+W|*|stationery|文房具|pens, paper, office supplies|Order more stationery.|文房具を追加注文して。
+W|*|cubicle|仕切られた個人席|a small desk area with low walls|My cubicle is next to the window.|私の席は窓際。
+W|*|all-hands meeting|全体会議、全社会議|a meeting for all employees|There's an all-hands at 10.|10時に全体会議。
+W|*|out of office|不在（OOO）|away from work|I'm out of office until Monday.|月曜まで不在です。
+W|*|deliverable|成果物|a product to be completed and handed in|The deliverables are due Friday.|成果物は金曜まで。
+W|*|touch up|手直しする|to make small improvements|Touch up the slides before the meeting.|会議前にスライドを手直しして。
+W|*|run by|（人に）確認してもらう|to show someone an idea to get their opinion|Let me run this by my boss.|上司に確認してみます。
+W|*|take a rain check|（誘いを）また今度にする|to decline now but accept later|Can I take a rain check on lunch?|ランチまた今度でいい？
+W|*|call it a day|今日はここまでにする|to stop working for the day|Let's call it a day.|今日はここまで。
+W|*|swamped|てんてこ舞いの、忙殺されて|extremely busy|I'm swamped this week.|今週は忙しすぎる。
+W|*|slack off|サボる、手を抜く|to work less hard than you should|Don't slack off.|手を抜くな。
+W|*|pitch|売り込み（をする）|a presentation to persuade|She pitched the idea to the client.|彼女は顧客にアイデアを売り込んだ。
+W|*|headcount|人員（数）|number of employees|We can't increase headcount.|人員は増やせない。
+W|*|win-win|双方に得な|good for both sides|It's a win-win deal.|お互いに得な取引だ。
+J||accountant|会計士|a person who keeps financial records|Our accountant handles taxes.|税金は会計士に任せている。
+J||architect|建築家|a person who designs buildings|The architect drew the plans.|建築家が図面を描いた。
+J|*|attorney|弁護士（米。= lawyer）|a lawyer who represents clients|Talk to an attorney first.|まず弁護士に相談して。
+J||barista|バリスタ|a person who makes coffee|The barista knows my order.|バリスタは私の注文を覚えている。
+J||carpenter|大工|a person who builds with wood|A carpenter fixed the door.|大工がドアを直した。
+J||chef|料理長、シェフ|a professional cook|The chef recommends the fish.|シェフのおすすめは魚。
+J|*|civil servant|公務員|a person who works for the government|My father is a civil servant.|父は公務員だ。
+J||dentist|歯医者|a doctor for teeth|I have a dentist appointment.|歯医者の予約がある。
+J|*|electrician|電気工事士|a person who installs wiring|Call an electrician.|電気屋さんを呼んで。
+J||firefighter|消防士|a person who puts out fires|Firefighters arrived in minutes.|数分で消防士が来た。
+J||flight attendant|客室乗務員|staff who serve passengers on a plane|The flight attendant brought water.|客室乗務員が水を持ってきた。
+J|*|freelancer|フリーランス|a self-employed worker for many clients|She works as a freelancer.|彼女はフリーで働いている。
+J||hairdresser|美容師|a person who cuts and styles hair|My hairdresser is booked for weeks.|私の美容師は何週間も先まで予約がいっぱいだ。
+J|*|janitor|用務員、清掃員（= custodian）|a person who cleans a building|The janitor locked the school.|用務員さんが学校に鍵をかけた。
+J||journalist|記者|a person who reports news|A journalist interviewed him.|記者が彼に取材した。
+J||judge|裁判官|a person who decides cases in court|The judge read the sentence.|裁判官が判決を言い渡した。
+J||librarian|司書|a person who works in a library|Ask the librarian.|司書に聞いて。
+J|*|mechanic|整備士|a person who repairs cars|The mechanic fixed my brakes.|整備士がブレーキを直した。
+J|*|nursery school teacher|保育士|a teacher for young children|She's a nursery school teacher.|彼女は保育士だ。
+J|*|pharmacist|薬剤師|a person who prepares medicine|Ask the pharmacist about side effects.|副作用は薬剤師に聞いて。
+J|*|physician|医師（特に内科医）|a medical doctor|See your physician.|かかりつけ医に診てもらって。
+J|*|surgeon|外科医|a doctor who performs operations|The surgeon operated for six hours.|外科医は6時間手術した。
+J|*|plumber|配管工、水道屋|a person who fixes water pipes|We need a plumber for the leak.|水漏れで水道屋が必要だ。
+J||police officer|警察官|a member of the police|Ask a police officer.|警察官に聞いて。
+J|*|software developer|ソフトウェア開発者|a person who builds software|He's a software developer.|彼はソフト開発者だ。
+J|*|real estate agent|不動産業者|a person who sells or rents homes|The real estate agent showed us the flat.|不動産屋が部屋を見せてくれた。
+J||receptionist|受付係|a person who greets visitors|Check in with the receptionist.|受付で手続きして。
+J|*|sales rep|営業担当（representative）|a person who sells for a company|Our sales rep will call you.|担当営業から連絡します。
+J|*|social worker|ソーシャルワーカー、福祉士|a person who helps people in need|A social worker visited the family.|福祉士がその家族を訪ねた。
+J|*|surveyor|測量士|a person who measures land|The surveyor marked the border.|測量士が境界に印をつけた。
+J|*|interpreter|通訳（translator は翻訳家）|a person who translates speech|We hired an interpreter.|通訳を雇った。
+J|*|translator|翻訳家|a person who translates writing|She's a novel translator.|彼女は小説の翻訳家だ。
+J|*|veterinarian|獣医（= vet）|a doctor for animals|Take the dog to the vet.|犬を獣医に連れて行って。
+J|*|welder|溶接工|a person who joins metal with heat|The welder wore a mask.|溶接工はマスクをしていた。
+J|*|caregiver|介護士（= care worker）|a person who looks after the elderly or sick|My aunt is a caregiver.|叔母は介護士だ。
+J|*|paramedic|救急救命士|a person trained to give emergency care|The paramedics arrived quickly.|救急隊がすぐ来た。
+J|*|dietitian|管理栄養士|an expert in food and nutrition|The dietitian planned my meals.|管理栄養士が食事を考えてくれた。
+J||pilot|パイロット|a person who flies aircraft|The pilot made an announcement.|機長がアナウンスした。
+J|*|mail carrier|郵便配達員（= mailman）|a person who delivers mail|The mail carrier came early.|郵便屋さんが早く来た。
+J||delivery driver|配達ドライバー|a person who delivers packages|The delivery driver left it at the door.|配達員が玄関に置いていった。
+J||farmer|農家|a person who grows crops or raises animals|My grandfather is a farmer.|祖父は農家だ。
+J||fisherman|漁師|a person who catches fish|The fishermen left before dawn.|漁師は夜明け前に出た。
+J||consultant|コンサルタント|an expert who gives advice|We hired a consultant.|コンサルを雇った。
+J|*|intern|インターン、研修生|a student working temporarily to gain experience|I was an intern last summer.|去年の夏インターンをした。
+J|*|temp|派遣社員、臨時職員|a temporary worker|We hired a temp for a month.|1か月派遣を雇った。
+J|*|part-timer|パート・アルバイト（arbeit はドイツ語）|someone who works part-time|I work at a café as a part-timer.|カフェでバイトしている。
+J|*|self-employed|自営業の|working for yourself|My parents are self-employed.|両親は自営業だ。
+J|*|contractor|請負業者|a person or firm hired for a job|The contractor finished the roof.|業者が屋根を仕上げた。
+J|*|curator|学芸員|a person who manages a museum collection|The curator chose the paintings.|学芸員が絵を選んだ。
+J|*|stay-at-home parent|専業主婦・主夫|a parent who stays home to care for kids|He's a stay-at-home dad.|彼は専業主夫だ。
+`;
+
+const PC={A:"あいさつ・近況",R:"相づち・リアクション",Q:"依頼・お願い",T:"感謝・謝罪",Y:"賛成・反対",I:"誘い・提案",N:"断り・保留",E:"感情・気持ち",C:"励まし・気遣い",M:"会話をつなぐ"};
+const RAW3=`
+A|What's up?|最近どう？／やあ|"What's up?" "Not much. You?"|「どう？」「別に。そっちは？」|How's it going?~最も無難なカジュアル挨拶;What's new?~新しい出来事を聞く;How have you been?~しばらくぶりの相手に;Sup?~かなりくだけた若者言葉
+A|Long time no see.|久しぶり|Long time no see! You look great.|久しぶり！元気そうだね。|It's been ages.~「何年ぶり」と大げさに;It's been a while.~穏やかで丁寧;Where have you been?~「どこ行ってたの」と親しみを込めて
+A|Not much.|特に何も|"What are you up to?" "Not much."|「何してる？」「特に何も」|Nothing much.~ほぼ同じ;Same old, same old.~相変わらずだよ;Just the usual.~いつも通り
+A|I'm good.|元気だよ|"How are you?" "I'm good, thanks."|「元気？」「元気だよ、ありがとう」|Pretty good.~まあまあ元気;Can't complain.~文句なし、まずまず;Never better.~最高に元気;Hanging in there.~何とかやってる（少し大変）
+A|Nice to meet you.|はじめまして|Hi, I'm Ken. Nice to meet you.|ケンです。はじめまして。|Pleased to meet you.~少し丁寧;Good to meet you.~カジュアル;Nice meeting you.~別れ際に「会えてよかった」
+A|See you later.|またね|I'm heading out. See you later!|もう行くね。またね！|See you around.~いつかまた（予定なし）;Catch you later.~くだけた言い方;Take care.~体に気をつけて;Talk to you soon.~また連絡するね
+A|Have a good one.|良い一日を|Thanks! Have a good one.|ありがとう！良い一日を。|Have a nice day.~定番だが少しかしこまる;Enjoy your weekend.~週末前に;Have fun.~遊びに行く人へ
+A|I'm off.|もう行くね、帰るね|Okay, I'm off. Bye!|じゃあ行くね、バイバイ！|I'm heading out.~出かけるね;I gotta run.~急いでるから行かなきゃ;I'd better get going.~そろそろ行かないと
+A|How was your day?|今日どうだった？|Hey, how was your day?|ねえ、今日どうだった？|How did it go?~特定の出来事の結果を聞く;Anything interesting happen?~面白いことあった？;Busy day?~忙しかった？
+A|What have you been up to?|最近何してた？|So, what have you been up to lately?|で、最近何してたの？|Anything new?~何か変わったことある？;Keeping busy?~忙しくしてる？;How's life treating you?~人生どう？（少し冗談めかして）
+R|No way!|まさか！うそでしょ！|"I won the lottery." "No way!"|「宝くじ当たった」「うそでしょ！」|Seriously?~本当に？;You're kidding!~冗談でしょ;Get out of here!~まさか（驚き・喜び）;For real?~マジで？
+R|That makes sense.|なるほど、筋が通る|Oh, that makes sense now.|ああ、それで納得した。|I see.~なるほど（中立）;Got it.~了解、わかった;That explains it.~それで説明がつく;Fair enough.~まあそれなら仕方ない
+R|Tell me about it.|ほんとそれ、まったくだ|"Mondays are the worst." "Tell me about it."|「月曜って最悪」「ほんとそれ」|I know, right?~だよね！;You can say that again.~まったくその通り;You're telling me.~言われなくてもわかってる
+R|Good for you!|よかったね！|"I got the job!" "Good for you!"|「採用された！」「よかったね！」|That's great!~いいね;Congrats!~おめでとう;I'm so happy for you.~心から嬉しい;Way to go!~よくやった
+R|That's too bad.|それは残念|"I missed the concert." "Oh, that's too bad."|「ライブ行けなかった」「それは残念」|What a shame.~もったいない、残念;That sucks.~最悪だね（くだけた）;Bummer.~がっかりだね;I'm sorry to hear that.~丁寧に同情
+R|Sounds good.|いいね、了解|"Let's meet at six." "Sounds good."|「6時に会おう」「了解」|Works for me.~都合いいよ;Perfect.~完璧;Sure thing.~もちろん;I'm down.~乗った（若者言葉）
+R|Fair enough.|まあ、それもそうだね|"I'm too tired to go." "Fair enough."|「疲れたから行けない」「まあ仕方ないね」|That's reasonable.~妥当だね;Okay, I get it.~わかったよ;Point taken.~言いたいことは了解
+R|Oh, I see.|ああ、なるほど|Oh, I see what you mean.|ああ、言いたいことわかった。|Ah, got it.~了解;Oh, okay.~ああそう;Right.~そうだね（相づち）;Gotcha.~わかった（くだけた）
+R|Really?|本当？|"She's moving to Canada." "Really?"|「彼女カナダに引っ越すって」「本当？」|Is that so?~そうなんですか（やや丁寧）;Oh yeah?~へえ（軽い驚き）;You don't say.~へえ（皮肉にもなる）
+R|That's awesome!|すごい！最高！|You're going to Hawaii? That's awesome!|ハワイ行くの？最高じゃん！|That's amazing!~驚くほどすごい;Sweet!~いいね（くだけた）;Cool!~いいね;That's incredible!~信じられないほどすごい
+R|Same here.|私も|"I'm starving." "Same here."|「お腹ペコペコ」「私も」|Me too.~私も（定番）;Me neither.~私も〜ない（否定文に）;Ditto.~同じく;That makes two of us.~私も同じ
+Q|Could you do me a favor?|お願いがあるんだけど|Could you do me a favor and close the window?|悪いけど窓閉めてくれる？|Can I ask you something?~聞いてもいい？;Would you mind...?~〜してもらえますか（丁寧）;I need a favor.~頼みがある（直接的）
+Q|Would you mind...?|〜してもかまいませんか|Would you mind opening the door?|ドアを開けていただけますか？|Do you mind if I...?~私が〜してもいい？;Could you possibly...?~とても丁寧;Is it okay if I...?~〜してもいい？（カジュアル）
+Q|Can you give me a hand?|手伝ってくれる？|Can you give me a hand with these bags?|この荷物運ぶの手伝ってくれる？|Can you help me out?~助けてくれる？;Could you lend me a hand?~少し丁寧;I could use some help.~手伝いが欲しいな
+Q|Hang on a second.|ちょっと待って|Hang on a second, I'll grab my coat.|ちょっと待って、コート取ってくる。|Hold on.~待って;Just a sec.~ちょっとだけ;Give me a minute.~1分ちょうだい;Bear with me.~少々お待ちを（丁寧）
+Q|Can I get...?|〜をください（注文）|Can I get a large coffee, please?|Lサイズのコーヒーをください。|I'll have...~〜にします;Could I have...?~少し丁寧;I'd like...~〜をお願いします
+Q|Let me know.|知らせてね|Let me know if you need anything.|何か必要なら言ってね。|Keep me posted.~随時教えて;Get back to me.~返事ちょうだい;Fill me in.~詳しく教えて
+Q|Could you say that again?|もう一度言ってもらえますか|Sorry, could you say that again?|すみません、もう一度言ってもらえますか？|Pardon?~失礼、何と？;Come again?~え、何て？（くだけた）;Sorry, I didn't catch that.~聞き取れなかった
+Q|Can you keep it down?|静かにしてくれる？|Can you keep it down? I'm trying to sleep.|静かにしてくれる？寝ようとしてるんだ。|Please be quiet.~直接的;Could you turn it down?~音量を下げて;Shh!~しーっ
+Q|Do you have a minute?|ちょっといい？|Do you have a minute? I need to talk.|ちょっといい？話があるんだ。|Got a sec?~くだけた;Are you free right now?~今空いてる？;Can I borrow you for a moment?~少し時間もらえる？（職場で）
+Q|Help yourself.|ご自由にどうぞ|There's food in the fridge. Help yourself.|冷蔵庫に食べ物あるから自由にどうぞ。|Go ahead.~どうぞ;Feel free.~遠慮なく;Be my guest.~どうぞご遠慮なく
+T|Thanks a lot.|どうもありがとう|Thanks a lot for your help.|手伝ってくれて本当にありがとう。|Thanks a million.~本当にありがとう（強調）;I really appreciate it.~心から感謝;Cheers.~ありがとう（英国）;I owe you one.~借りができた
+T|No problem.|どういたしまして|"Thanks!" "No problem."|「ありがとう！」「どういたしまして」|You're welcome.~定番;Anytime.~いつでもどうぞ;Don't mention it.~礼には及ばない;My pleasure.~喜んで（丁寧）
+T|My bad.|ごめん、私のせい|Oh, my bad. I took your seat.|あ、ごめん。席取っちゃった。|Sorry about that.~それはごめん;That's on me.~私の責任;I messed up.~やらかした
+T|I'm so sorry.|本当にごめんなさい|I'm so sorry I'm late.|遅れて本当にごめん。|I apologize.~丁寧・フォーマル;Please forgive me.~許してください;I feel terrible about it.~本当に申し訳なく思う
+T|Don't worry about it.|気にしないで|"I broke your cup." "Don't worry about it."|「カップ割っちゃった」「気にしないで」|No worries.~気にしないで;It's fine.~大丈夫;It happens.~よくあることだよ;No harm done.~実害はないよ
+T|That's very kind of you.|ご親切にどうも|That's very kind of you to say.|そう言ってくれてありがとう。|How thoughtful.~気が利くね;You shouldn't have.~そんな気を遣わなくても（贈り物に）;That means a lot.~すごく嬉しい
+T|Excuse me.|すみません（呼びかけ・通してほしい時）|Excuse me, is this seat taken?|すみません、この席空いてますか？|Pardon me.~少し丁寧;Sorry.~ぶつかった時など;Coming through.~通りまーす
+T|Thanks anyway.|とにかくありがとう（結果が出なくても）|"Sorry, I don't know." "Thanks anyway."|「ごめん、わからない」「とにかくありがとう」|Thanks for trying.~試してくれてありがとう;I appreciate it anyway.~それでも感謝;Thanks all the same.~いずれにせよありがとう
+Y|I agree.|賛成|I agree with you completely.|完全に同意する。|Exactly.~その通り;Absolutely.~まったくもって;You're right.~君の言う通り;I couldn't agree more.~大賛成
+Y|I'm not so sure.|どうかなあ|"This plan will work." "I'm not so sure."|「この計画はうまくいく」「どうかなあ」|I have my doubts.~疑問がある;I don't know about that.~それはどうかな;Hmm, maybe not.~うーん、違うかも
+Y|You have a point.|一理あるね|You have a point. Let's rethink it.|一理あるね。考え直そう。|That's a good point.~いい指摘;Fair point.~もっともだ;I hadn't thought of that.~そこは考えてなかった
+Y|That's not what I meant.|そういう意味じゃない|No, that's not what I meant.|いや、そういう意味じゃないよ。|You got me wrong.~誤解してる;Let me rephrase that.~言い直させて;I didn't mean it that way.~そういうつもりじゃなかった
+Y|It depends.|場合による|"Is it expensive?" "It depends."|「高い？」「場合による」|That depends.~同じ;It varies.~まちまち;Case by case.~ケースバイケース
+Y|I guess so.|たぶんね、そうかもね|"Is it going to rain?" "I guess so."|「雨降るかな？」「たぶんね」|Probably.~おそらく;I suppose so.~まあそうだろうね（やや渋々）;Seems like it.~そうみたい
+Y|No doubt.|間違いない|"She'll win." "No doubt."|「彼女が勝つよ」「間違いない」|For sure.~確かに;Definitely.~絶対に;Without a doubt.~疑いなく
+Y|I see your point, but...|言いたいことはわかるけど…|I see your point, but it's too expensive.|言いたいことはわかるけど、高すぎる。|I hear you, but...~わかるけど;That's true, but...~それはそうだけど;Yes, but...~そうだけど（やや直接的）
+Y|Agree to disagree.|意見の違いを認め合う|Let's just agree to disagree.|お互い意見が違うということで。|Let's drop it.~この話はやめよう;We'll have to disagree.~意見は合わないね;Each to their own.~人それぞれ
+I|Why don't we...?|〜しない？|Why don't we grab lunch?|ランチ行かない？|How about...?~〜はどう？;Let's...~〜しよう;Shall we...?~〜しましょうか（丁寧・英国）;What do you say we...?~〜するのはどう？
+I|Are you free...?|〜空いてる？|Are you free this Saturday?|今週の土曜空いてる？|Are you busy...?~忙しい？;Got any plans...?~予定ある？;Do you have time...?~時間ある？
+I|Wanna grab a bite?|軽く何か食べない？|I'm hungry. Wanna grab a bite?|お腹すいた。何か食べない？|Wanna get something to eat?~何か食べに行く？;Let's grab lunch.~ランチしよう;Up for dinner?~夕飯どう？
+I|I'm in.|乗った！参加する|"Karaoke tonight?" "I'm in!"|「今夜カラオケ？」「行く！」|Count me in.~私も入れて;I'm down.~行く（若者言葉）;Sounds like a plan.~いい計画だね
+I|It's up to you.|あなた次第|"Pizza or sushi?" "It's up to you."|「ピザか寿司か」「任せるよ」|Your call.~君が決めて;Whatever you like.~好きな方で;I'm easy.~どっちでもいいよ;I don't mind.~気にしない
+I|Let's play it by ear.|臨機応変にいこう|We don't need a plan. Let's play it by ear.|計画はいらない、その場で決めよう。|Let's see how it goes.~様子を見よう;Let's wing it.~ぶっつけ本番で;We'll figure it out.~なんとかなる
+I|You should try it.|やってみなよ|This ramen is great. You should try it.|このラーメンうまいよ。食べてみて。|Give it a try.~試してみて;Give it a shot.~一度やってみて;You won't regret it.~後悔しないよ
+I|What do you think?|どう思う？|I painted it blue. What do you think?|青く塗った。どう思う？|What's your take?~君の見解は？;How does that sound?~それでどう？;Any thoughts?~何か意見ある？
+I|Let's call it a day.|今日はここまで|It's late. Let's call it a day.|遅いし、今日はここまで。|Let's wrap it up.~まとめて終わろう;That's enough for today.~今日はこれで十分;Let's call it a night.~今夜はここまで
+N|I'll pass.|やめとく|"Want some more?" "I'll pass, thanks."|「もっといる？」「やめとく、ありがとう」|No, thanks.~結構です;Maybe next time.~また今度;I'm good.~大丈夫、いらない
+N|I'll think about it.|考えておく|It's a big decision. I'll think about it.|大きな決断だから考えておく。|Let me sleep on it.~一晩考えさせて;I'll get back to you.~後で返事する;Give me some time.~少し時間をちょうだい
+N|Maybe some other time.|また今度ね|I can't today. Maybe some other time.|今日は無理。また今度ね。|Rain check?~また今度でいい？;Another time, maybe.~別の機会に;Not today.~今日はだめ
+N|I'm afraid I can't.|申し訳ないけどできない|I'm afraid I can't make it tomorrow.|あいにく明日は行けません。|Unfortunately, I can't.~残念ながら;I wish I could, but...~行きたいけど;I'm tied up.~手が離せない
+N|Not right now.|今はちょっと|"Can we talk?" "Not right now."|「話せる？」「今はちょっと」|Not now.~今はだめ（直接的）;Can it wait?~後でもいい？;Now's not a good time.~今はタイミングが悪い
+N|I'd rather not.|できれば遠慮したい|"Want to sing?" "I'd rather not."|「歌う？」「遠慮しとく」|I'd prefer not to.~できれば避けたい;I'm not really into it.~あまり乗り気じゃない;It's not my thing.~私の趣味じゃない
+N|I'll have to check.|確認してみないと|I'll have to check my schedule.|予定を確認しないと。|Let me check.~確認させて;I'm not sure yet.~まだわからない;I'll let you know.~また知らせる
+N|No way.|絶対いや|"Jump in the cold lake?" "No way."|「冷たい湖に飛び込む？」「絶対いや」|Not a chance.~ありえない;Forget it.~無理だね;Absolutely not.~断固拒否;Over my dead body.~死んでもいや（誇張）
+E|I'm exhausted.|くたくただ|I worked twelve hours. I'm exhausted.|12時間働いた。くたくた。|I'm beat.~くたくた（くだけた）;I'm worn out.~疲れ切った;I'm wiped out.~完全に消耗;I'm dead tired.~死ぬほど疲れた
+E|I'm starving.|お腹ペコペコ|What's for dinner? I'm starving.|夕飯何？お腹ペコペコ。|I'm famished.~ひどく空腹（やや硬い）;I could eat a horse.~めちゃくちゃお腹すいた（誇張）;I'm getting hungry.~お腹すいてきた
+E|I'm stuffed.|お腹いっぱい|No dessert for me. I'm stuffed.|デザートはいい。お腹いっぱい。|I'm full.~満腹;I can't eat another bite.~もう一口も無理;I'm so full I could burst.~はち切れそう
+E|I can't stand it.|我慢できない|This heat — I can't stand it.|この暑さ、耐えられない。|I can't take it anymore.~もう限界;It drives me crazy.~気が狂いそう;I'm sick of it.~うんざり;I'm fed up.~うんざりだ
+E|I'm so nervous.|すごく緊張してる|I have a speech tomorrow. I'm so nervous.|明日スピーチ。すごく緊張する。|I have butterflies in my stomach.~胸がドキドキ;I'm on edge.~ピリピリしてる;I'm freaking out.~パニック気味
+E|I'm into it.|ハマってる|I'm really into K-dramas lately.|最近韓国ドラマにハマってる。|I'm hooked on it.~病みつき;I'm obsessed with it.~夢中;It's my thing.~私の好きなこと;I'm a big fan of it.~大ファン
+E|I can't wait.|待ちきれない|Summer vacation starts Friday. I can't wait!|夏休みは金曜から。待ちきれない！|I'm looking forward to it.~楽しみにしている（丁寧）;I'm so excited.~ワクワク;I'm counting the days.~指折り数えている
+E|It's not a big deal.|大したことない|Relax. It's not a big deal.|落ち着いて、大したことないよ。|It's nothing.~何でもない;No biggie.~平気平気（くだけた）;It's no big thing.~大したことじゃない
+E|That's annoying.|イラッとする|He keeps calling me. That's annoying.|何度も電話してくる。イラッとする。|That bugs me.~気に障る;It gets on my nerves.~神経に障る;That's irritating.~いらいらする
+E|I feel bad.|申し訳ない気がする|I feel bad about forgetting her birthday.|彼女の誕生日を忘れて申し訳ない。|I feel terrible.~ひどく申し訳ない;I feel guilty.~罪悪感がある;I regret it.~後悔している
+E|I'm so embarrassed.|すごく恥ずかしい|I fell in front of everyone. I'm so embarrassed.|みんなの前で転んだ。恥ずかしすぎる。|How embarrassing!~恥ずかしい！;I wanted to disappear.~消えたかった;I'm mortified.~死ぬほど恥ずかしい
+E|I'm relieved.|ほっとした|The test was canceled? I'm so relieved.|テスト中止？ほっとした。|What a relief!~よかった、安心;Phew!~ふう;That's a weight off my shoulders.~肩の荷が下りた
+E|I'm in a good mood.|機嫌がいい|I'm in a good mood today.|今日は気分がいい。|I'm in high spirits.~上機嫌;I'm on cloud nine.~有頂天;I'm feeling great.~最高の気分
+C|Take it easy.|無理しないで、気楽にね|You've been working hard. Take it easy.|頑張りすぎだよ。無理しないで。|Don't push yourself.~無理しないで;Go easy on yourself.~自分に厳しくしすぎないで;Get some rest.~休んで
+C|You've got this.|君ならできる|Don't worry about the exam. You've got this!|試験の心配しないで。君ならできる！|You can do it.~できるよ;I believe in you.~信じてる;Go for it!~やってみな;Break a leg!~頑張って（本番前に）
+C|Hang in there.|踏ん張って|I know it's hard. Hang in there.|大変なのはわかる。踏ん張って。|Keep going.~続けて;Don't give up.~諦めないで;Stick with it.~粘り強く;Chin up.~元気出して
+C|Are you okay?|大丈夫？|You look pale. Are you okay?|顔色悪いよ。大丈夫？|Is everything alright?~何かあった？;What's wrong?~どうしたの？;You alright?~大丈夫？（くだけた）
+C|It'll be fine.|大丈夫だよ|Don't worry. It'll be fine.|心配しないで。大丈夫だよ。|It'll work out.~うまくいくよ;Everything will be okay.~全部うまくいく;Things will get better.~良くなるよ
+C|Better luck next time.|次は頑張って|You lost, but better luck next time.|負けたけど、次は頑張って。|You'll get it next time.~次はいけるよ;There's always next time.~次があるさ;Don't let it get you down.~落ち込まないで
+C|I'm here for you.|私がついてるよ|Call me anytime. I'm here for you.|いつでも電話して。私がついてる。|I've got your back.~味方だよ;You can count on me.~頼っていいよ;You're not alone.~ひとりじゃない
+C|Get well soon.|早く良くなってね|Sorry you're sick. Get well soon!|具合悪いんだね。早く良くなってね！|Feel better soon.~早く元気になってね;Take care of yourself.~お大事に;Hope you feel better.~良くなるといいね
+C|Don't sweat it.|気にするな|You forgot? Don't sweat it.|忘れた？気にするな。|Don't stress.~ストレスに思わないで;Forget about it.~忘れていいよ;No sweat.~楽勝・お安い御用
+C|Congratulations!|おめでとう！|Congratulations on your graduation!|卒業おめでとう！|Congrats!~くだけた;Well done!~よくやった;Cheers to you!~君に乾杯
+M|By the way,|ところで|By the way, did you call your mom?|ところで、お母さんに電話した？|Speaking of which,~そういえば（関連して）;Oh, before I forget,~忘れないうちに;Anyway,~とにかく、話を戻して;Incidentally,~ちなみに（硬い）
+M|You know what?|あのさ、実はね|You know what? I'm quitting my job.|あのね、仕事辞めるんだ。|Guess what?~聞いて聞いて;Listen,~聞いて;Here's the thing.~実はこういうこと
+M|I mean,|というか、つまり|I mean, it's not bad, but it's not great.|というか、悪くはないけど最高でもない。|What I mean is,~言いたいのは;In other words,~言い換えると;Like,~なんか（口癖）
+M|Let me see.|ええと|Let me see... I think it's on Tuesday.|ええと…火曜だと思う。|Let me think.~考えさせて;Well,~まあ、ええと;Hmm.~うーん
+M|Anyway,|とにかく、それはさておき|Anyway, let's get back to work.|とにかく仕事に戻ろう。|Moving on,~次に行くと;Where was I?~どこまで話したっけ;Long story short,~要するに
+M|To be honest,|正直に言うと|To be honest, I didn't like the movie.|正直、その映画好きじゃなかった。|Honestly,~正直;Frankly,~率直に言って;If I'm being honest,~正直なところ;Truth be told,~実を言うと
+M|What I'm trying to say is,|言いたいのはね|What I'm trying to say is, I need more time.|言いたいのは、もっと時間が必要ってこと。|My point is,~要点は;The thing is,~問題はね;Basically,~要するに
+M|Speaking of...|〜と言えば|Speaking of food, are you hungry?|食べ物と言えば、お腹すいた？|That reminds me,~それで思い出した;On that note,~その話で言うと;Talking about...~〜の話だけど
+M|Long story short,|要するに、手短に言うと|Long story short, we missed the flight.|要するに、飛行機に乗り遅れた。|To make a long story short,~同じ（フル形）;In short,~要するに;Bottom line,~結論として
+M|What do you mean?|どういう意味？|What do you mean you're not coming?|来ないってどういうこと？|What are you getting at?~何が言いたいの？;Meaning?~つまり？;How so?~どうして？
+M|Just kidding.|冗談だよ|You're fired! Just kidding.|クビだ！冗談だよ。|Just joking.~冗談;I'm messing with you.~からかってるだけ;Gotcha!~ひっかかった！
+M|Never mind.|やっぱりいいや、気にしないで|Never mind, I found my keys.|やっぱいいや、鍵見つかった。|Forget it.~もういい;It's nothing.~何でもない;Don't worry about it.~気にしないで
+`;
+
+const CATS={G:"文法・構文",F:"頻度の副詞",C:"犯罪・法律",I:"イディオム",B:"ビジネス・経済",V:"動詞",A:"形容詞・副詞",N:"名詞",P:"体の部位",S:"ストーリー語"};
+const RAW=`
+G|have my hair cut|髪を切ってもらう（have＋物＋過去分詞）|to arrange for someone else to cut your hair|I'll have my hair cut before the interview.|面接の前に髪を切ってもらうつもりだ。
+G|get my hair done|髪をセットしてもらう|to have a professional style your hair|She got her hair done for the wedding.|彼女は結婚式のために髪をセットしてもらった。
+G|come to do|（自然と）〜するようになる|to gradually begin to think or feel something|I came to love this quiet town.|この静かな町が好きになった。
+G|get to do|〜する機会を得る、〜できる|to have the chance to do something|We got to meet the author after the talk.|講演の後、著者に会うことができた。
+G|grow to do|次第に〜するようになる|to slowly start to feel something over time|He grew to trust her completely.|彼は次第に彼女を完全に信頼するようになった。
+G|learn to do|（努力して）〜できるようになる|to gain the skill or habit of doing something|She learned to swim at forty.|彼女は40歳で泳げるようになった。
+G|prohibit from|〜するのを禁止する（prohibit 人 from doing）|to officially forbid someone from doing something|Visitors are prohibited from touching the glass.|来場者はガラスに触れることを禁じられている。
+G|forbid|禁じる（forbid 人 to do / forbid doing）|to order someone not to do something|My parents forbade me to go out at night.|両親は私に夜の外出を禁じた。
+G|rob of|人から〜を奪う（= deprive 人 of）|to take something important away from someone|The noise robbed me of sleep.|騒音で眠れなかった。
+G|substitute with|AをBで代用する（substitute A with B）|to use B instead of A|You can substitute butter with olive oil.|バターはオリーブオイルで代用できる。
+G|contrary to|〜に反して|opposite to what is expected or said|Contrary to the rumors, he was innocent.|噂に反して、彼は無実だった。
+G|stem from|〜から生じる、〜に起因する|to be caused by or originate from|The dispute stemmed from a misunderstanding.|その争いは誤解から生じた。
+F|always|いつも（100%）|every time, without exception|I always wake up at 7am.|いつも7時に起きる。
+F|usually|普段は（90%）= typically|in most cases|I usually eat breakfast.|普段は朝食を食べる。
+F|generally|通常は（75%）= normally|as a general rule|I generally work at my office.|通常はオフィスで仕事をする。
+F|often|しょっちゅう（60%）= frequently|many times|I often go to Japan.|しょっちゅう日本へ行く。
+F|sometimes|時々（50%）|on some occasions|I sometimes eat hamburgers.|時々ハンバーガーを食べる。
+F|occasionally|たまに（40%）|now and then, not regularly|I occasionally go running.|たまにランニングをする。
+F|rarely|めったに〜ない（20%）|not often|I rarely eat junk food.|めったにジャンクフードは食べない。
+F|hardly ever|ほとんど〜ない（10%）|almost never|I hardly ever go to the movies.|ほとんど映画に行かない。
+F|never|決して〜ない（0%）|at no time|I never lie to my friends.|友人には決して嘘をつかない。
+C|kidnapping|誘拐|taking a person away by force, often for money|The kidnapping shocked the whole town.|その誘拐事件は町中に衝撃を与えた。
+C|abduction|（強制的な）連れ去り|taking someone away illegally by force|Police are treating it as an abduction.|警察はそれを連れ去り事件として扱っている。
+C|robbery|強盗（暴行・脅迫を伴う）|stealing from a person using force or threats|There was an armed robbery at the bank.|銀行で武装強盗があった。
+C|burglary|空き巣、不法侵入|breaking into a building to steal|Our house was hit by a burglary last week.|先週うちが空き巣に入られた。
+C|theft|窃盗|the act of stealing|Car theft is common in this area.|この地域では車の盗難が多い。
+C|pickpocketing|スリ|stealing from people's pockets or bags|Watch out for pickpocketing on the train.|電車でのスリに注意。
+C|shoplifting|万引き|stealing goods from a shop|He was caught shoplifting.|彼は万引きで捕まった。
+C|fraud|詐欺|deceiving people to get money illegally|She was accused of insurance fraud.|彼女は保険金詐欺で告発された。
+C|scam|（ネットなどの）詐欺|a dishonest trick to get money|That email is obviously a scam.|そのメールは明らかに詐欺だ。
+C|scammer|詐欺師（= fraudster）|a person who cheats people out of money|The scammer called pretending to be a bank.|詐欺師は銀行を装って電話してきた。
+C|murder|殺人|the crime of intentionally killing a person|He was charged with murder.|彼は殺人罪で起訴された。
+C|manslaughter|過失致死|killing someone without intending to|The driver was convicted of manslaughter.|運転手は過失致死で有罪になった。
+C|arson|放火|setting fire to property on purpose|The warehouse fire was arson.|倉庫の火事は放火だった。
+C|extortion|恐喝、ゆすり|getting money by threats|He was arrested for extortion.|彼は恐喝で逮捕された。
+C|blackmail|（秘密・写真で）ゆすること|threatening to reveal secrets unless paid|She refused to give in to blackmail.|彼女はゆすりに屈しなかった。
+C|assault|暴行|a physical attack on a person|He was charged with assault.|彼は暴行罪で起訴された。
+C|criminal|犯罪者|a person who commits a crime|The criminal escaped through the window.|犯人は窓から逃げた。
+C|suspect|容疑者／疑う|a person thought to be guilty; to believe someone is guilty|Police suspect the neighbor.|警察は隣人を疑っている。
+C|victim|被害者|a person harmed by a crime|The victim was taken to hospital.|被害者は病院に運ばれた。
+C|arrest|逮捕する|to take someone into police custody|She was arrested at the airport.|彼女は空港で逮捕された。
+C|convicted of|〜で有罪判決を受ける|officially found guilty of a crime|He was convicted of fraud.|彼は詐欺で有罪になった。
+C|verdict|評決|the decision of a jury in a trial|The jury reached a verdict of guilty.|陪審は有罪の評決を出した。
+C|jury|陪審員（団）|a group of citizens who decide a trial|The jury took four hours to decide.|陪審は決定に4時間かかった。
+C|accuse of|〜のことで告発する、非難する|to say someone has done something wrong|She accused him of lying.|彼女は彼が嘘をついていると非難した。
+C|incarcerate|投獄する、拘束する|to put someone in prison|He was incarcerated for ten years.|彼は10年間投獄された。
+C|litigation|訴訟|the process of taking a case to court|The company is facing costly litigation.|その会社は費用のかかる訴訟を抱えている。
+C|settlement|和解、決済|an official agreement ending a dispute|They reached a settlement out of court.|彼らは示談で和解した。
+C|absolve|免責する、無罪とする|to declare someone free from blame|The report absolved him of any wrongdoing.|報告書は彼の過失を一切否定した。
+C|nullify|無効にする|to make legally invalid|The court nullified the contract.|裁判所はその契約を無効にした。
+C|stipulation|条項、規定|a condition in an agreement|The contract has a strict stipulation about payment.|契約には支払いに関する厳しい条項がある。
+C|adhere to|（規則に）従う、順守する|to follow rules exactly|All staff must adhere to safety rules.|全職員が安全規則を守らなければならない。
+I|run amok|理性を失って暴れ回る|to behave wildly and out of control|The plan ran amok and nobody could stop it.|計画は暴走し、誰も止められなかった。
+I|dwell on|〜を引きずる、くよくよ考える|to keep thinking about something unpleasant|Don't dwell on your past mistakes.|過去のミスをいつまでも引きずらないで。
+I|for a lark|ふざけて、遊びで|just for fun, as a joke|We did it just for a lark.|ほんの遊びでやっただけだ。
+I|shades of|〜の面影|a reminder of someone or something|You have shades of your dad.|父の面影があるね。
+I|early bird|早起きの人|a person who gets up early|My sister is an early bird.|妹は朝型だ。
+I|night owl|夜型の人|a person who stays up late|I'm a night owl, so mornings are hard.|夜型なので朝はつらい。
+I|roll the dice|一か八かやってみる|to take a risk|We rolled the dice and launched early.|一か八かで早めに発売した。
+I|roll one's eyes|あきれて目をぐるりと回す|to show annoyance or disbelief|She rolled her eyes at his excuse.|彼の言い訳に彼女はあきれた。
+I|one of a kind|唯一無二の|unique; nothing else like it|This watch is one of a kind.|この時計は世界に一つだけだ。
+I|open book|隠し事のない人|a person who hides nothing|I'm an open book. Ask me anything.|隠し事はない。何でも聞いて。
+I|keep it up|その調子で頑張れ|continue doing well (= way to go, good job)|Great score! Keep it up.|すごい点数！その調子で。
+I|way to go|よくやった！|praise for a success|You passed? Way to go!|合格？よくやった！
+I|bend over backward|必死に努力する|to try extremely hard to help or please|They bent over backward to finish on time.|彼らは期限に間に合わせようと必死に努力した。
+I|keep one's head above water|どうにか乗り切る|to just manage to survive, especially financially|The shop is barely keeping its head above water.|店はかろうじて持ちこたえている。
+I|at the end of one's rope|もう限界で|having no patience or energy left|After a week of no sleep, I was at the end of my rope.|1週間眠れず、もう限界だった。
+I|throw in the towel|諦める、降参する|to give up|Don't throw in the towel yet.|まだ諦めるな。
+I|pull together|一丸となる、協力する|to work together as a group|If we pull together, we can finish today.|協力すれば今日終わる。
+I|keep one's nose to the grindstone|一生懸命働き続ける|to keep working hard for a long time|She kept her nose to the grindstone all year.|彼女は1年中こつこつ働いた。
+I|drop the ball|ミスをする、へまをする|to make a mistake by not doing your job|I dropped the ball on that email.|そのメール、うっかりしてた。
+I|take the bull by the horns|積極的に立ち向かう|to deal with a problem directly and bravely|She took the bull by the horns and called the boss.|彼女は意を決して上司に電話した。
+I|keep one's cool|冷静さを保つ|to stay calm under pressure|He kept his cool during the interview.|彼は面接中冷静だった。
+I|stay on one's toes|常に気を張っておく|to stay alert and ready|Stay on your toes; anything can happen.|気を抜くな、何が起きてもおかしくない。
+I|weather the storm|困難を乗り切る（weather = tide over = overcome）|to survive a difficult period|The company weathered the storm.|会社は難局を乗り切った。
+I|come out on top|勝ち抜く、成功する|to win in the end|After a long fight, we came out on top.|長い戦いの末、勝ち抜いた。
+I|keep the ball rolling|勢いを保つ|to keep something going|Let's keep the ball rolling.|この調子で続けよう。
+I|touch base|（軽く）連絡を取る|to briefly contact someone to check in|Let's touch base next week.|来週ちょっと連絡を取り合おう。
+I|in the same boat|同じ境遇で|in the same difficult situation|Don't worry, we're all in the same boat.|心配しないで、みんな同じ状況だよ。
+I|under the weather|体調が悪い|slightly ill|I'm feeling a bit under the weather.|ちょっと体調がすぐれない。
+I|burn out|燃え尽きる|to become exhausted from overwork|Take breaks or you'll burn out.|休まないと燃え尽きるよ。
+I|take a step back|一歩引いて考える|to pause and look at a situation calmly|Let's take a step back and think.|一歩引いて考えよう。
+I|in a bind|困っている|in a difficult situation|I'm in a bind. Can you help?|困ってるんだ。助けてくれる？
+I|have each other's backs|お互いを守り合う|to support and protect each other|We have each other's backs.|僕たちは支え合っている。
+I|stay on track|計画通りに進む|to continue as planned|We need to stay on track.|予定通り進める必要がある。
+I|hit the ground running|即座に全力で始める|to start something quickly and effectively|The new hire hit the ground running.|新人は初日から即戦力だった。
+I|a lot on one's plate|やることが山積み|having many tasks or problems|I've got a lot on my plate today.|今日はやることが山ほどある。
+I|put out fires|急なトラブルに対処する|to deal with sudden urgent problems|I've been putting out fires all morning.|朝からトラブル対応ばかりだ。
+I|get one's ducks in a row|準備を整える|to get organized|Get your ducks in a row before the meeting.|会議前に準備を整えて。
+I|give a hand|手を貸す|to help someone|Can you give me a hand with this box?|この箱、手伝ってくれる？
+I|lifesaver|命の恩人、助かった！|someone who helps you out of trouble|Thanks, you're a lifesaver!|ありがとう、本当に助かった！
+I|i owe you one|借りができたね|I will return the favor|Thanks for covering for me. I owe you one.|代わってくれてありがとう。借りができた。
+I|no worries|気にしないで|it's no problem|No worries, I'll handle it.|気にしないで、やっておくよ。
+I|get away|（休暇で）逃げ出す|to go on vacation, escape routine|I need to get away for a few days.|数日どこかに行きたい。
+I|change of scenery|気分転換、環境を変えること|a new place or environment|A change of scenery will do you good.|環境を変えると良いよ。
+I|drive up the wall|ひどくイライラさせる|to annoy someone very much|That noise is driving me up the wall.|あの音にイライラする。
+I|kick back|くつろぐ|to relax|Let's kick back and watch a movie.|のんびり映画でも見よう。
+I|off the beaten path|人の行かない、穴場の|not well known to tourists|We found a café off the beaten path.|穴場のカフェを見つけた。
+I|soak up the sun|日光浴を楽しむ|to enjoy sitting in the sunshine|We soaked up the sun on the beach.|浜辺で日光を浴びた。
+I|break the bank|大金を使う|to cost too much|A short trip won't break the bank.|短い旅行なら大した出費にはならない。
+I|keep an eye out|気をつけて探す|to watch for something|Keep an eye out for cheap flights.|安い航空券に目を光らせておいて。
+I|play one's cards right|うまく立ち回る|to make the right decisions|If you play your cards right, you'll get promoted.|うまくやれば昇進できる。
+I|treat yourself|自分へのご褒美|to buy or do something nice for yourself|You worked hard. Treat yourself!|頑張ったんだからご褒美を！
+I|tighten one's belt|節約する|to spend less money|We need to tighten our belts this month.|今月は節約しないと。
+I|splurge|散財（する）、贅沢|to spend a lot of money on a treat|I splurged on a new jacket.|新しいジャケットに奮発した。
+I|retail therapy|買い物での気晴らし|shopping to feel better|A bit of retail therapy cheered her up.|ちょっと買い物して彼女は元気になった。
+I|charge an arm and a leg|法外な値段をとる|to charge a very high price|That hotel charges an arm and a leg.|あのホテルは法外に高い。
+I|max out|（カードの）限度額まで使い切る|to use all available credit|He maxed out his credit card.|彼はカードを限度額まで使った。
+I|stumble upon|偶然見つける|to find by chance|I stumbled upon an old letter.|古い手紙を偶然見つけた。
+I|click with|〜と意気投合する|to get along well immediately|She clicked with the client right away.|彼女は顧客とすぐ意気投合した。
+I|red tape|お役所仕事、煩雑な手続き|too many official rules and forms|We lost months to red tape.|面倒な手続きで何か月も無駄にした。
+I|draw the line|一線を引く|to set a limit on what you will accept|I draw the line at lying.|嘘をつくことだけは許せない。
+I|opening credits|オープニングのスタッフ表記|names shown at the start of a film|We missed the opening credits.|オープニングを見逃した。
+I|catch critters|小動物・虫を捕まえる|to catch small animals or bugs|Kids love to catch critters in the park.|子どもは公園で虫捕りが大好きだ。
+B|leverage|活用する、てこにする|to use something to maximum advantage|Leverage your experience in the interview.|面接で経験を活かそう。
+B|attribute to|〜のおかげ・せいとする|to say something is caused by|Success can be attributed to hard work.|成功は努力のおかげだ。
+B|streamline|効率化する|to make a process simpler and faster|We streamlined the ordering process.|発注プロセスを効率化した。
+B|merchandise|商品|goods that are bought and sold|New merchandise arrives on Monday.|新商品は月曜に入荷する。
+B|proficiency|熟練度、技能|a high degree of skill|She has proficiency in three languages.|彼女は3か国語に堪能だ。
+B|coherent|一貫性のある|logical and consistent|We need a coherent strategy.|一貫した戦略が必要だ。
+B|advisable|賢明な、望ましい|sensible and recommended|It is advisable to book early.|早めの予約が賢明だ。
+B|entrepreneur|起業家|a person who starts a business|She is a young entrepreneur.|彼女は若い起業家だ。
+B|proprietor|経営者、所有者|the owner of a business|The proprietor greeted us at the door.|店主が入口で迎えてくれた。
+B|delegate|委任する／代表者（= representative）|to give a task to someone; a representative|Learn to delegate tasks.|仕事を任せることを覚えよう。
+B|commission|委託する、依頼する|to formally ask someone to do work|They commissioned a new statue.|彼らは新しい像を依頼した。
+B|allocate|割り当てる|to give a share for a purpose|We allocated more budget to marketing.|マーケティングに予算を多く割り当てた。
+B|substantiate|実証する、裏付ける|to provide evidence for|Can you substantiate that claim?|その主張を裏付けられる？
+B|viable|実行可能な|able to work successfully|Is the plan financially viable?|その計画は資金的に実現可能か？
+B|contingency|不測の事態|a possible future emergency|We have a contingency plan.|緊急時の計画がある。
+B|equity|株式、持ち分|ownership in a company|She owns 30% of the equity.|彼女は株式の30%を保有している。
+B|liability|負債、（法的）責任|money owed; legal responsibility|The company's liabilities exceed its assets.|会社の負債が資産を上回っている。
+B|insolvency|支払不能、破産状態|being unable to pay debts|The firm is close to insolvency.|その会社は破産寸前だ。
+B|accrue|（利息などが）生じる、たまる|to increase over time|Interest accrues monthly.|利息は毎月発生する。
+B|dividend|配当|a share of profits paid to shareholders|The company paid a large dividend.|会社は多額の配当を出した。
+B|turnover|離職率／売上高|rate of staff leaving; total sales|Staff turnover is high here.|ここは離職率が高い。
+B|tenure|在職期間、任期|the time someone holds a job|During his tenure, sales doubled.|彼の在任中に売上は倍増した。
+B|appraisal|評価、査定|an assessment of value or performance|My annual appraisal is next week.|来週は年次評価だ。
+B|severance|退職金／切断|money paid when a job ends; cutting off|She got a small severance payment.|彼女は少ない退職金を受け取った。
+B|expedite|早める、促進する|to make something happen faster|Can you expedite the delivery?|配送を早めてもらえる？
+B|levy|課税（する）|to officially impose a tax or fine|The government levied a new tax.|政府は新税を課した。
+B|waive|免除する、放棄する（= exempt）|to not require a rule or fee|They waived the late fee.|延滞料を免除してくれた。
+B|prerequisite|前提条件|something required beforehand|Math is a prerequisite for this course.|この講義は数学が前提条件だ。
+B|credit|評価、信用、単位|praise; trust; a unit of study|She deserves credit for the idea.|その案は彼女の手柄だ。
+B|inaugural|最初の、初開催の|first in a series; marking a beginning|The inaugural festival was a success.|第1回の祭りは成功した。
+B|initiative|新たな取り組み|a new plan to solve a problem|The company launched a green initiative.|会社は環境施策を始めた。
+V|ward off|防ぐ、撃退する|to prevent something bad from harming you|She wore a charm to ward off bad luck.|彼女は厄除けにお守りを身につけた。
+V|squander|浪費する（= waste）|to waste money or chances foolishly|He squandered his inheritance.|彼は遺産を浪費した。
+V|alter|変える、変更する|to change something slightly|He altered his return policy.|彼は返品規定を変更した。
+V|scatter|まき散らす、散らばる|to spread in many directions|The papers scattered in the wind.|書類が風で散らばった。
+V|defuse|（危機・爆弾を）和らげる、解除する|to make a situation less tense|A joke defused the tension.|冗談が緊張を和らげた。
+V|revise|修正する（= amend）|to change in order to improve|Please revise the report.|報告書を修正してください。
+V|amend|（法・文書を）改正する|to make changes to a law or document|The rule was amended last year.|その規則は昨年改正された。
+V|flick off|指ではじき飛ばす|to remove with a quick finger movement|He flicked off the bug.|彼は虫を指ではじいた。
+V|compliment|ほめる／ほめ言葉|to say something nice about someone|She complimented my English.|彼女は私の英語をほめた。
+V|sip|一口ずつ飲む|to drink in small amounts|She sipped her tea slowly.|彼女はゆっくり紅茶をすすった。
+V|slurp|音を立ててすする|to drink or eat noisily|He slurped his noodles.|彼は麺をずるずるすすった。
+V|gulp|ごくごく飲む|to swallow quickly in large amounts|He gulped down the water.|彼は水をがぶ飲みした。
+V|chew|噛む|to crush food with your teeth|Chew your food well.|よく噛んで食べなさい。
+V|nibble|少しずつかじる（nibble at）|to take small bites|The mouse nibbled at the cheese.|ネズミがチーズをかじった。
+V|trek|（苦労して）歩いて旅する|to make a long, hard journey on foot|We trekked through the mountains.|私たちは山の中を歩き抜けた。
+V|pervade|行き渡る、充満する|to spread through every part|Fear pervaded the town.|恐怖が町中に広がった。
+V|penetrate|貫く、浸透する|to go into or through something|The cold penetrated my coat.|寒さがコートを突き抜けた。
+V|recline|もたれる、（座席を）倒す（= lean）|to lean back|She reclined in her chair.|彼女は椅子にもたれた。
+V|swerve|急に向きを変える、ハンドルを切る|to change direction suddenly|The car swerved to avoid a dog.|車は犬をよけて急ハンドルを切った。
+V|unplug|（コードを）抜く|to disconnect from the power supply|Unplug the TV before you leave.|出かける前にテレビのコードを抜いて。
+V|attempt|試みる／試み|to try to do something difficult|He attempted to escape.|彼は逃げようとした。
+V|decompose|分解する、腐敗する|to break down naturally after death|Leaves decompose in the soil.|葉は土の中で分解される。
+V|rot|腐る（= decay, putrefy, spoil）|to go bad and break apart|The fruit began to rot.|果物が腐り始めた。
+V|corrode|腐食させる|to slowly destroy metal by chemical action|Salt water corrodes metal.|塩水は金属を腐食させる。
+V|integrate|統合する（= combine, merge）|to combine into one|We integrated the two systems.|2つのシステムを統合した。
+V|confine|閉じ込める（= lock in）|to keep someone in a limited space|The dog was confined to the yard.|犬は庭に閉じ込められていた。
+V|amputate|切断する|to cut off a limb surgically|The doctor had to amputate his leg.|医師は彼の脚を切断せざるを得なかった。
+V|heckle|野次る（= jeer, hoot, boo）|to shout rude comments at a speaker|The crowd heckled the speaker.|群衆が演説者を野次った。
+V|soar|急上昇する（= surge）|to rise quickly to a high level|Prices soared last year.|昨年物価が急上昇した。
+V|pester|しつこく悩ませる|to annoy with repeated requests|Stop pestering me!|しつこくしないで！
+V|afflict|苦しめる|to cause pain or trouble to|Poverty afflicts the region.|貧困がその地域を苦しめている。
+V|hinder|妨げる（= impede）|to make progress difficult|Bad weather hindered the search.|悪天候が捜索を妨げた。
+V|buckle|（留め具で）締める／曲がる、崩れる|to fasten; to bend under pressure|Please buckle your seatbelt.|シートベルトを締めてください。
+V|congregate|集まる（= gather, assemble）|to come together in a group|Birds congregate near the lake.|鳥が湖の近くに集まる。
+V|throng|群がる／群衆|to crowd into a place|Fans thronged the gates.|ファンが門に押し寄せた。
+V|retaliate|報復する|to attack back|They retaliated with a lawsuit.|彼らは訴訟で報復した。
+V|perish|死ぬ、腐る、ダメになる|to die or be destroyed|Many perished in the fire.|多くの人が火事で亡くなった。
+V|assort|分類する、仕分ける|to arrange into groups|We assort goods by size.|商品をサイズで仕分ける。
+V|pave|舗装する／道を開く|to cover a road; to make possible|Her work paved the way for others.|彼女の仕事が後進の道を開いた。
+V|coincide|同時に起こる、一致する|to happen at the same time|The festival coincides with exams.|祭りが試験と重なる。
+V|dread|ひどく恐れる|to fear something that will happen|I dread going to the dentist.|歯医者に行くのが怖い。
+V|weed|雑草を抜く|to remove wild plants from a garden|We weeded the garden all morning.|午前中ずっと草むしりをした。
+V|acclaim|称賛する|to praise publicly|The film was widely acclaimed.|その映画は広く称賛された。
+V|affiliate with|〜に所属する、提携する|to be officially connected to|He's not affiliated with any party.|彼はどの政党にも属していない。
+V|agonize|（精神的に）苦しむ、悩み抜く|to worry and think hard for a long time|She agonized over the decision.|彼女はその決断に悩み抜いた。
+V|augment|増強する|to increase or make larger|He works nights to augment his income.|彼は収入を補うため夜も働く。
+V|alleviate|和らげる、軽減する|to make pain or problems less severe|This medicine alleviates pain.|この薬は痛みを和らげる。
+V|solicit|求める、勧誘する|to ask for something, often money or help|They solicited donations.|彼らは寄付を募った。
+V|bolster|強化する（= enhance, improve）|to support or strengthen|The win bolstered their confidence.|勝利で彼らの自信が強まった。
+V|exaggerate|誇張する|to say something is bigger than it is|Don't exaggerate.|大げさに言うな。
+V|go numb|しびれる、麻痺する（= be paralyzed）|to lose feeling|My fingers went numb in the cold.|寒さで指がしびれた。
+V|be paralyzed|麻痺する、立ちすくむ|to be unable to move or act|I was paralyzed with fear.|恐怖で動けなかった。
+V|rescue|救助する|to save from danger|They rescued the climbers.|彼らは登山者を救助した。
+V|scrawl|殴り書きする（= scribble）|to write quickly and carelessly|He scrawled his name on the note.|彼はメモに名前を殴り書きした。
+V|flex|見せびらかす（= show off, brag, boast）|to show off|He's always flexing his new car.|彼はいつも新車を自慢している。
+A|unsightly|見苦しい|ugly to look at|The building is covered in unsightly stains.|建物は見苦しい染みだらけだ。
+A|avid|熱心な|very enthusiastic|He's an avid reader.|彼は大の読書家だ。
+A|nigh|近い、ほぼ（= near, almost）|near; almost (literary)|It's nigh-on flawless.|ほぼ完璧だ。
+A|peculiar|奇妙な、特有の|strange; belonging to one place or person|There was a peculiar smell.|妙な匂いがした。
+A|queer|奇妙な（古風）|strange, odd (old-fashioned)|What a queer little house.|なんて奇妙な小さな家だ。
+A|unprecedented|前例のない|never happened before|The crisis is unprecedented.|この危機は前例がない。
+A|lousy|ひどい、体調が悪い（= awful）|very bad; ill|I feel lousy today.|今日は気分が悪い。
+A|controversial|議論を呼ぶ|causing disagreement|It was a controversial decision.|それは物議を醸す決定だった。
+A|ubiquitous|至る所にある|found everywhere|Smartphones are ubiquitous.|スマホはどこにでもある。
+A|ephemeral|儚い、つかの間の|lasting a very short time|Fame is ephemeral.|名声は儚い。
+A|ineffable|言葉にできない|too great to describe|An ineffable beauty filled the room.|言葉にできない美しさが部屋を満たした。
+A|meticulous|几帳面な、細心の|very careful about details|She keeps meticulous records.|彼女は細かく記録をつけている。
+A|ambiguous|曖昧な|having more than one meaning|His answer was ambiguous.|彼の答えは曖昧だった。
+A|perfunctory|おざなりな|done without care or interest|He gave a perfunctory nod.|彼はおざなりにうなずいた。
+A|ostentatious|けばけばしい、見せびらかす|showy, designed to impress|An ostentatious gold car.|派手な金色の車。
+A|disparate|異なる、ばらばらの|very different from each other|They come from disparate backgrounds.|彼らはまったく異なる背景を持つ。
+A|drowsy|眠い、うとうとした|almost asleep|The warm room made me feel drowsy.|暖かい部屋で眠くなった。
+A|lethargic|だるい、無気力な|tired and slow in body and mind|After lunch, I felt lethargic.|昼食後、だるかった。
+A|fatigued|疲労した|very tired|He looked fatigued after the meeting.|会議後、彼は疲れて見えた。
+A|somnolent|眠気を誘う、とても眠い|very sleepy (formal)|The lecture had a somnolent effect.|講義は眠気を誘った。
+A|dozy|うとうとした（口語）|sleepy, nodding off|I got a bit dozy on the train.|電車でうとうとした。
+A|daunting|気が引ける、圧倒される|making you feel worried about difficulty|Moving abroad can be daunting.|海外移住は気が引けることもある。
+A|formidable|手ごわい|strong and difficult to deal with|He's a formidable opponent.|彼は手ごわい相手だ。
+A|rigorous|厳格な、過酷な|very strict and thorough|The training is rigorous.|その訓練は厳しい。
+A|hard-fought|苦労して勝ち取った|achieved after a long struggle|It was a hard-fought victory.|苦労の末の勝利だった。
+A|stiff|激しい、厳しい|strong, severe|There is stiff competition.|競争が激しい。
+A|strenuous|骨の折れる|needing great effort|Hiking up was strenuous.|登るのは骨が折れた。
+A|altruistic|利他的な|caring about others more than yourself|An altruistic act of kindness.|利他的な親切。
+A|atrocious|ひどい、極悪な|extremely bad or cruel|That was an atrocious crime.|それは極悪な犯罪だった。
+A|plausible|もっともらしい|seeming reasonable or likely|Her story sounded plausible.|彼女の話はもっともらしく聞こえた。
+A|stringent|厳しい、厳格な|very strict|Stringent safety rules apply.|厳格な安全規則が適用される。
+A|desperate|必死の、絶望的な|willing to do anything because of a bad situation|He was desperate for money.|彼は金に困り果てていた。
+A|crooked|曲がった、歪んだ／不正な|not straight; dishonest|A crooked wooden hut.|歪んだ木の小屋。
+A|extensive|広範囲な、詳細な|covering a large area or amount|She has extensive experience.|彼女は豊富な経験がある。
+A|accomplished|有能な、熟達した|very skilled|An accomplished pianist.|熟達したピアニスト。
+A|inherent|本来備わっている|existing as a natural part|There are inherent risks.|本質的なリスクがある。
+A|upscale|高級な|expensive, for wealthy customers|An upscale restaurant.|高級レストラン。
+A|chic|おしゃれな|stylish|She looks so chic.|彼女はとてもおしゃれだ。
+A|pricey|高価な|expensive|It's a bit pricey.|ちょっと高い。
+A|sleek|洗練された、なめらかな|smooth, elegant, modern|A sleek design.|洗練されたデザイン。
+A|impeccable|完璧な|without any fault|Impeccable stitching.|完璧な縫製。
+A|luxurious|豪華な|very comfortable and expensive|A luxurious hotel room.|豪華なホテルの部屋。
+A|boggy|沼地の、ぬかるんだ（= marshy）|wet and soft like a swamp|The ground was boggy after the rain.|雨の後、地面はぬかるんでいた。
+A|inquisitive|探究心のある|eager to learn|She has an inquisitive mind.|彼女は探究心がある。
+A|adolescent|思春期の（人）|a young person between child and adult|Adolescent years can be hard.|思春期はつらいこともある。
+A|somehow|どういうわけか、何とかして|in a way not known|Somehow, the door was unlocked.|どういうわけか、ドアの鍵が開いていた。
+A|gusty|突風の吹く（windy < breezy < gusty）|with sudden strong winds|A gusty night.|突風の吹く夜。
+A|disappointing|期待外れの（一般的・フォーマル）|not as good as hoped|The results were disappointing.|結果は期待外れだった。
+N|letdown|期待外れ（カジュアル）|something disappointing|This restaurant was a letdown.|このレストランはハズレだった。
+N|dud|役立たず、不発|something that doesn't work|This product is a dud.|この製品はハズレだ。
+N|flop|大失敗|a failure (films, events)|The concert was a total flop.|そのコンサートは大失敗だった。
+N|bust|失敗、外れ|a failure|The date was a bust.|そのデートはハズレだった。
+N|lark|お遊び、悪ふざけ|something done for fun; a joke|It started as a lark.|最初はただのお遊びだった。
+N|terrarium|テラリウム（飼育用ガラス容器）|a glass case for plants or small animals|She keeps frogs in a terrarium.|彼女はテラリウムでカエルを飼っている。
+N|miniature|ミニチュア、小型の|a very small copy|A miniature garden.|ミニチュアの庭。
+N|grasshopper|バッタ（被食者 = prey）|a jumping insect|The grasshopper leapt away.|バッタが跳んで逃げた。
+N|praying mantis|カマキリ（捕食者 = predator）|an insect that waits to catch prey|A praying mantis waits without moving.|カマキリは動かずに待つ。
+N|prey|獲物、被食者|an animal hunted by another|The mantis grabbed its prey.|カマキリが獲物を捕らえた。
+N|predator|捕食者|an animal that hunts others|Owls are night predators.|フクロウは夜の捕食者だ。
+N|charm|お守り、魅力、飾り|a lucky object; attractiveness|She wore a silver charm.|彼女は銀のお守りを身につけていた。
+N|larva|幼虫（複数形 larvae）|the young form of an insect|The larvae hatched yesterday.|幼虫が昨日孵った。
+N|aspect|側面|one part or feature of something|Consider every aspect of the problem.|問題のあらゆる側面を考えよう。
+N|doctrine|教義、主義|a set of beliefs taught by a group|Military doctrine.|軍事ドクトリン。
+N|creed|信条|a set of beliefs or principles|Honesty is my creed.|正直が私の信条だ。
+N|dogma|独断的教義|a belief accepted without question|Don't follow dogma blindly.|教条を鵜呑みにするな。
+N|methane|メタン|a gas produced by decay|The marsh smelled of methane.|沼地はメタンの匂いがした。
+N|carp|鯉|a large freshwater fish|Carp swam in the pond.|池で鯉が泳いでいた。
+N|avalanche|雪崩、殺到|a mass of snow falling; a sudden flood of things|An avalanche of letters arrived.|手紙が殺到した。
+N|graffiti|落書き（= scribble, scrawl）|writing sprayed on walls|The wall was covered in graffiti.|壁は落書きだらけだった。
+N|mileage|走行距離|distance a vehicle has traveled|The car has low mileage.|その車は走行距離が短い。
+N|reverence|畏敬、敬意（= homage）|deep respect|They spoke of him with reverence.|彼らは彼を敬って語った。
+N|homage|敬意、オマージュ|something done to show respect|The film pays homage to old movies.|その映画は古い映画へのオマージュだ。
+N|spur|拍車（をかける）／山の支脈|something that encourages; a mountain ridge|The prize spurred him on.|賞が彼を奮い立たせた。
+N|corpse|死体（= dead body）|a dead human body|The corpse was never identified.|遺体の身元は分からなかった。
+N|grudge|恨み|a long-lasting bad feeling against someone|He held a grudge for years.|彼は何年も恨みを抱いていた。
+N|merchant|商人|a person who buys and sells goods|A merchant from the city.|都会から来た商人。
+N|microbes|微生物|very small living things|Microbes break down dead plants.|微生物は枯れた植物を分解する。
+N|conscience|良心|your sense of right and wrong|My conscience is clear.|やましいことはない。
+N|inhabitant|住民（= resident）|a person who lives in a place|The island has 200 inhabitants.|島の住民は200人だ。
+N|constraint|制約（= restraint）|a limit or restriction|Time constraints.|時間的制約。
+N|abbreviation|略語、省略（= omission）|a short form of a word|"Dr." is an abbreviation.|「Dr.」は略語だ。
+N|limbs|手足（= arms and legs）|arms and legs|My limbs were stiff.|手足がこわばっていた。
+N|overdose|過剰摂取|too much of a drug at once|An overdose can be fatal.|過剰摂取は命に関わる。
+N|exaggeration|誇張|saying something is bigger than it is|That's an exaggeration.|それは大げさだ。
+N|meadow|牧草地|a field of grass and flowers|Cows grazed in the meadow.|牛が牧草地で草を食べていた。
+N|herd|（牛などの）群れ（= flock）|a group of animals|A herd of cattle.|牛の群れ。
+N|hedge|生け垣（= fence, palisade, barrier）|a row of bushes forming a fence|He hid behind the hedge.|彼は生け垣の陰に隠れた。
+N|precipitation|降水（量）|rain or snow|Heavy precipitation is expected.|大量の降水が予想される。
+N|cacophony|騒音、不協和音|a loud mix of unpleasant sounds|A cacophony of horns.|クラクションの騒音。
+N|conundrum|難問|a confusing, difficult problem|We faced a real conundrum.|本当の難問に直面した。
+N|literacy|読み書き能力|the ability to read and write|Literacy rates are rising.|識字率は上昇している。
+N|dictation|書き取り|writing down what someone says|We had a dictation test.|書き取りテストがあった。
+N|protractor|分度器|a tool for measuring angles|Measure the angle with a protractor.|分度器で角度を測る。
+N|tenancy|賃借、賃貸契約|the right to live in a rented place|A month-to-month tenancy.|月単位の賃貸契約。
+N|splendor|華麗さ、壮麗|great beauty and grandeur|The splendor of the palace.|宮殿の壮麗さ。
+N|diploma|卒業証書、修了証|a certificate from a school|She received her diploma.|彼女は卒業証書を受け取った。
+N|wrinkles|しわ|small lines on a surface|Wrinkles in the old wall.|古い壁のしわ。
+N|crocs|クロックス（サンダル）|rubber clog shoes|He wore crocs to the store.|彼はクロックスで店に行った。
+P|forehead|額|the part of the face above the eyes|Sweat ran down his forehead.|汗が額を流れた。
+P|forelock|前髪（= bangs）|hair falling over the forehead|She brushed her forelock aside.|彼女は前髪を払った。
+P|eyelash|まつげ|a hair on the edge of the eyelid|You have an eyelash on your cheek.|頬にまつげがついてるよ。
+P|snout|（動物の）鼻|the long nose of an animal|The pig's snout.|豚の鼻。
+P|nasal|鼻の|related to the nose|A nasal voice.|鼻声。
+P|chin|あご（先）|the bottom of the face|He rubbed his chin.|彼はあごをさすった。
+P|jaw|あご（骨）|the bones that hold the teeth|His jaw dropped.|彼はあんぐり口を開けた。
+P|navel|へそ（= belly button）|the small hollow on the stomach|The shirt showed her navel.|そのシャツはへそが見えた。
+P|underarm|脇の下|the area under the arm|Underarm deodorant.|脇用デオドラント。
+P|wrist|手首|the joint between hand and arm|She wore a watch on her wrist.|彼女は手首に時計をしていた。
+P|pinky|小指|the smallest finger|Pinky promise!|指きりげんまん！
+P|thigh|太もも|the upper part of the leg|A thigh injury.|太ももの怪我。
+P|shin|すね|the front of the leg below the knee|I hit my shin on the table.|テーブルですねを打った。
+P|calf|ふくらはぎ|the back of the leg below the knee|My calves hurt after the run.|走った後ふくらはぎが痛い。
+P|ankle|足首|the joint between foot and leg|She twisted her ankle.|彼女は足首をひねった。
+P|heel|かかと|the back of the foot|A blister on my heel.|かかとに靴ずれ。
+P|sole|足の裏、靴底|the bottom of the foot or shoe|The sole of my shoe is worn.|靴底がすり減っている。
+S|ransom|身代金|money demanded to free a kidnapped person|The kidnapper demanded a ransom.|誘拐犯は身代金を要求した。
+S|alibi|アリバイ|proof you were elsewhere during a crime|He had no alibi for that night.|彼にはその夜のアリバイがなかった。
+S|accomplice|共犯者|a person who helps commit a crime|Police are looking for an accomplice.|警察は共犯者を探している。
+S|burner phone|使い捨て携帯|a cheap phone used briefly to avoid being traced|He used a burner phone.|彼は使い捨て携帯を使った。
+S|frame|（人に）罪を着せる|to make an innocent person look guilty|I was framed!|はめられた！
+S|fuse box|配電盤、ヒューズ箱|a box controlling a building's electricity|The fuse box is in the basement.|配電盤は地下にある。
+S|insistent|しつこく言い張る|demanding firmly and repeatedly|She was insistent that he was innocent.|彼女は彼の無実を強く主張した。
+S|heir|相続人|a person who will receive someone's property|He is the only heir.|彼が唯一の相続人だ。
+S|overturn|（判決を）覆す|to officially reverse a decision|The verdict was overturned.|評決は覆された。
+`;
+const VOC=[];const MAP={};
+RAW.trim().split("\n").forEach(l=>{const [c,w,ja,def,ex,exja]=l.split("|");const o={c,w,ja,def,ex,exja,k:w.toLowerCase()};VOC.push(o);MAP[o.k]=o;});
+const SCN=[];RAW2.trim().split("\n").forEach(l=>{const [c,f,w,ja,def,ex,exja]=l.split("|");const o={c,f:!!f,w,ja,def,ex,exja,k:c+":"+w.toLowerCase()};SCN.push(o);MAP[o.k]=o;});
+const PHR=[];RAW3.trim().split("\n").forEach(l=>{const [c,w,ja,ex,exja,sim]=l.split("|");const sims=sim.split(";").map(x=>x.split("~"));const o={c:"P"+c,pc:c,w,ja,ex,exja,sims,def:"言い換え: "+sims.map(x=>x[0]).join(" / "),k:"P:"+w.toLowerCase()};PHR.push(o);MAP[o.k]=o;});
+const lab=o=>o.pc?"日常表現 · "+PC[o.pc]:(CATS[o.c]||SC[o.c]);
+
+const CH=[
+{t:"The Inaugural Night",sum:"語り手ジュリアンは「隠し事はない」と言いながら、あの夜を書き記す。叔母マーガレットは高級テラリウム会社の経営者で、実は破産寸前。ガラス博物館の初開催の夜、恨みを持つ昆虫商人サイラス、冷遇されて解雇された元助手ルース、パーティー嫌いのオカフォー警部が集う。叔母は「カマキリは追わない、獲物の方からやって来る」と語る。11時42分、停電。明かりが戻ると、カマキリのケースは割れ、叔母は消え、お守りだけが残されていた。",
+p:`People say I {{dwell on}} the past. Maybe they are right. I {{hardly ever}} talk about that night, and I {{never}} talk about it sober. But the detective asked me to write it all down, so here it is. I'm an {{open book}}. I {{always}} have been.
+
+My aunt, Margaret Hale, was the {{proprietor}} of Hale & Glass, a company that built {{terrariums|terrarium}} for rich people who wanted a {{miniature}} jungle in the living room. She was {{meticulous}}, {{ostentatious}}, and absolutely {{one of a kind}}. She was also, though almost nobody knew it yet, close to {{insolvency}}.
+
+On the third of October she held the {{inaugural}} night of the Glass Garden, her new museum of living things. The guests were exactly who you would expect: investors in {{chic}}, {{pricey}} suits, a few journalists, and Detective Inspector Grace Okafor, who {{rarely}} went to parties and looked like she was already regretting this one.
+
+There were also two people who should not have been there. Silas Brandt, a {{merchant}} who sold rare insects, had held a {{grudge}} against my aunt for years; she had once {{accused|accuse of}} him of {{fraud}} in front of the whole industry. And Ruth Abernathy, her former assistant, had been fired in June with a {{severance}} payment so small she called it an insult.
+
+Earlier that evening the hall lights had flickered, and I had asked Silas, of all people, to {{give me a hand|give a hand}} with the {{fuse box}}. He grumbled, but he helped. Merchants {{generally}} do, when a Hale asks nicely.
+
+"Don't look so {{lethargic}}, Julian," my aunt said, handing me a glass of champagne. I {{sipped|sip}} mine; she {{gulped|gulp}} hers. "You're a {{night owl}}. This is your hour." Then she gave me one of her rare {{compliments|compliment}}. "You have {{shades of}} your father tonight. He was good at waiting, too."
+
+In the center of the hall stood her favorite exhibit: a tall glass case holding a single {{praying mantis}} and a handful of {{grasshoppers|grasshopper}}. "The mantis never chases," she told the crowd. "It waits. The {{prey}} always comes to the {{predator}}." Everyone laughed. I didn't.
+
+At 11:42 the lights died. I know the exact minute because I was looking at my watch. Glass broke somewhere in the dark, and someone screamed. When the lights came back ninety seconds later, the mantis case lay in pieces, the grasshoppers had {{scattered|scatter}} across the floor, and my aunt was gone. On the spot where she had stood lay her silver beetle {{charm}}, the one she wore to {{ward off}} bad luck.`},
+{t:"The Note",sum:"翌朝、ジュリアン宛てに身代金要求の手紙が届く。「牧草地のそばの歪んだ小屋に置け。くよくよするな、ジュリアン」。オカフォーは呆れ顔。マスコミが殺到し、温室の壁には「バッタは気づかない」の落書き。恨みとアリバイのなさからサイラスが疑われる。ルースは「会社は負債と訴訟で沈みかけていた」と明かし、「誘拐犯なんていないのかも」とつぶやく。ジュリアンは捜索に加わり、「叔母は沼地を嫌っていた、探しても無駄だ」と警部に念を押す。",
+p:`The {{ransom}} note arrived the next morning, addressed to me. It was {{scrawled|scrawl}} in thick black marker:
+
+[note]Five million. No police. Leave it under the {{crooked}} hut by the {{meadow}}. Don't {{dwell on}} it, Julian. Just pay.
+
+Detective Okafor read it twice and {{rolled her eyes|roll one's eyes}}. "No police," she said. "They {{always}} write that. And they always know we'll come anyway." To her it was a simple {{kidnapping}} with {{extortion}} attached. To the newspapers it was {{unprecedented}}: the queen of glass, stolen from her own glass house.
+
+For the next week, reporters {{thronged|throng}} at the gates of the Glass Garden, and one night someone sprayed {{graffiti}} across the greenhouse wall in red paint: THE GRASSHOPPER NEVER SEES IT COMING.
+
+The police {{suspected|suspect}} Silas first. He had a grudge, he had no {{alibi}}, and his fingerprints were all over the fuse box. When they questioned him, he {{kept his cool|keep one's cool}} for about ten minutes, then began to {{heckle}} the officers and shout that Margaret had {{robbed him of|rob of}} his career and now she was robbing him of his freedom.
+
+Ruth was more helpful. She invited me to her small flat and made tea. "Your aunt was drowning, Julian," she said quietly. "The company had huge {{liabilities|liability}}. The tax office was about to {{levy}} a penalty, and there was a {{litigation}} case she could never win. She was barely {{keeping her head above water|keep one's head above water}}."
+
+"Then why would anyone kidnap her?" I asked. "There's nothing left to take."
+
+Ruth looked at me for a long moment. "Maybe nobody did," she said.
+
+I joined the search teams every day. I {{trekked|trek}} through the woods and over the hills, and I told Okafor everything I knew about my aunt's habits. "Don't waste time on the marsh," I said. "She hated {{boggy}} ground. She would never go near it, not even at gunpoint."
+
+Okafor wrote that down. She writes everything down. "Stay {{on your toes|stay on one's toes}}, Mr. Hale," she said. "People who {{dwell on}} things tend to notice things."`},
+{t:"The Second Phone",sum:"10日後、ジュリアンは叔母の書斎で机の裏に貼られた使い捨て携帯を偶然見つける。中のメッセージは衝撃的だった。「11時42分に消灯」「お守りを置いて」「罪はサイラスに」。叔母は誘拐を自作自演し、破産と訴訟から逃れ、宿敵サイラスに罪を着せようとしていたのだ（第1のどんでん返し）。ジュリアンは警部に届け、共犯者はルースではと示唆する。だが相手の番号は既に解約され、翌朝には携帯のメッセージも遠隔で消去されていた。",
+p:`Ten days later, I {{stumbled upon|stumble upon}} it. I was searching my aunt's study for insurance papers when I found a second phone taped beneath her desk drawer: a cheap {{burner phone}}, the kind criminals use in films.
+
+The messages on it left me {{paralyzed|be paralyzed}}. They were between Margaret and a single unknown number, and they began a month before the party.
+
+[note]Lights out at 11:42. Ninety seconds. Leave the charm so it looks real.
+
+[note]Silas takes the blame. He deserves it.
+
+My aunt had not been kidnapped. She had staged the whole thing. The insolvency, the lawsuits, the old {{grudge}}: she had found a way to escape all of them at once. Disappear, let the world believe she was a {{victim}}, and let her old enemy be {{convicted of}} a crime he did not commit. It was {{atrocious}}. It was also, I had to admit, very much like her.
+
+I took the phone straight to Okafor. She read every message without changing her expression. "Who's the other number?" she asked.
+
+"Her {{accomplice}}," I said. "Someone helped her. Someone cut the power at exactly 11:42."
+
+"Ruth?"
+
+I hesitated. "Maybe. She knew more than she told me. She said maybe nobody kidnapped my aunt at all. How would she know that?"
+
+Okafor looked at me the way the mantis had looked at the grasshoppers. "Interesting," she said, and wrote that down too.
+
+But when the police traced the number, it was already dead. And when the technicians opened the phone again the next morning, the messages were gone, deleted remotely during the night. All that was left was my word and a {{plausible}} story that nobody could {{substantiate}}.
+
+"We're not {{in the same boat}}, you and I," Okafor told me as I left. "You only need to believe a story. I need to prove one."`},
+{t:"The Verdict",sum:"3月、サイラスの裁判。配電盤の指紋や「いつか報いを受けさせる」と書いた昔の手紙など、証拠は手ごわかった。ジュリアンは携帯の件を証言するが、現物はない。評決は有罪、サイラスは12年の拘禁に。去り際、彼はジュリアンを恐怖の目で見つめた。2週間後、牧草地の東の沼地で叔母の遺体が発見され、事件は殺人に。ルースの車が当夜沼地付近で目撃されており、彼女が共犯として逮捕される。ジュリアンは限界寸前の日々を送る。そこへ警部から手紙が届く。",
+p:`Silas Brandt went on trial in March. The evidence against him was {{formidable}}: his fingerprints on the fuse box, threads from his coat on the broken glass, and an old letter in which he had written that Margaret "would pay one day." His lawyers tried to {{nullify}} the letter as evidence. They failed.
+
+I testified. I told the {{jury}} about the phone. The prosecutor smiled politely and asked where the phone was now. I had no answer. The {{verdict}} took only four hours: guilty of kidnapping. Silas was {{incarcerated|incarcerate}} for twelve years.
+
+As they led him away, he looked straight at me. For the first time I saw no anger in his face. Only fear.
+
+Two weeks later, a farmer's dog found my aunt. She was lying in the marsh east of the meadow, half-sunk in the black water, where the cold and the {{microbes}} had already done their slow work. The air smelled of {{methane}} and rot. It was no longer a kidnapping. It was {{murder}}.
+
+The case was reopened. Ruth was {{arrested|arrest}} a day later; a witness had seen her car near the marsh on the night of the party. The newspapers decided she had been Margaret's accomplice, that the two women had argued over the money, and that the plan had {{run amok}} in the dark. It was a neat theory. Everyone liked it.
+
+I felt {{lousy}}. I had pointed the police toward Ruth myself. For weeks I {{rarely}} slept, and when I did, I dreamed of grasshoppers. I was {{at the end of my rope|at the end of one's rope}}.
+
+Then, on a {{gusty}} Tuesday morning, a letter arrived. It was from Detective Inspector Okafor.`},
+{t:"The Mantis Hour",sum:"警部の手紙がすべてを覆す。①停電の瞬間に時計を見ていたのは、待っていたから。②「歪んだ小屋」を知っていたのは叔母とジュリアンだけ（思春期に二人で建てた）。③身代金メモの「くよくよするな」は彼自身の口癖。④沼地を探させなかったのは証拠を水に消させるため。⑤サイラスの指紋は、ジュリアン自身が配電盤の手伝いを頼んだから。叔母が共犯に選んだのはジュリアンだった。彼は「お遊び」の偽装誘拐を本物の死に変え、身代金と同じ500万の生命保険を唯一の相続人として得ようとしたのだ。携帯も彼が「発見」させ、自分で消去した。ルースは釈放、サイラスの判決は覆る。「カマキリは待つ。でも私もずっと待っていた」――そして追伸。",
+p:`[letter]Dear Julian,
+
+[letter]Thank you for writing all of this down. You write well. You are also, as you told me on the very first page, an {{open book}}. That was your mistake. You let me read you.
+
+[letter]Allow me to point out a few things you wrote.
+
+[letter]First: at 11:42 you were looking at your watch. Nobody at a party checks their watch at the exact second the lights die. Unless they are waiting for it.
+
+[letter]Second: the ransom note said to leave the money under the crooked hut by the meadow. Ruth had never heard of that hut. Silas had never been to this town before October. But in our first interview you told me that you and your aunt built that hut together when you were an {{adolescent}}. Only two people in the world knew where it was. One of them was in the marsh.
+
+[letter]Third: "Don't dwell on it." The note's words, and the first words of your own story. People {{seldom|rarely}} notice their own habits.
+
+[letter]Fourth: you were very {{insistent}} that we should not search the marsh. Not even at gunpoint, you said. So we searched everywhere else for two weeks, long enough for the water to destroy most of what she could have told us, and long enough for Silas to be convicted.
+
+[letter]Fifth: Silas's fingerprints were on the fuse box because you asked him to {{give you a hand|give a hand}} with it an hour before the party. You told me that yourself, quite proudly.
+
+[letter]Here is what I believe. Your aunt chose you as her accomplice. Of course she did; she trusted you more than anyone. You cut the power. You drove her away in the dark. The burner phone was hers, and the unknown number was yours. And somewhere on that drive you decided that a staged kidnapping was a {{lark}}, but a real death was worth far more. Her life insurance pays five million, the same number you wrote on the ransom note, to her only {{heir}}. You.
+
+[letter]You did not {{stumble upon}} that phone. You let me find it through you, so that you would look honest and Ruth would look guilty. Then you deleted the messages yourself, from the other phone, that same night.
+
+[letter]I have not {{thrown in the towel|throw in the towel}}. Ruth was released this morning. Silas's conviction will be {{overturned|overturn}} by Friday. And there are two officers at your door as you read this.
+
+[letter]Your aunt was right about one thing. The mantis never chases. It waits.
+
+[letter]You thought you were the mantis, Julian. But I have been waiting, too.
+
+[letter]D.I. Grace Okafor
+
+[letter]P.S. The mantis case did not break by accident. It stood beside the fuse box, and you knocked it over in the dark on your way out. Your fingerprints are on the largest piece of glass. I kept it.`}
+];
+
+// ---------- state ----------
+let known=new Set();
+try{known=new Set(JSON.parse(localStorage.getItem("mh-known")||"[]"))}catch(e){}
+function saveKnown(){try{localStorage.setItem("mh-known",JSON.stringify([...known]))}catch(e){}}
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+
+// story words index
+const storyKeys=new Set();
+CH.forEach(c=>{c.keys=[];c.p.replace(/\{\{([^}|]+)(?:\|([^}]+))?\}\}/g,(m,a,b)=>{const k=(b||a).toLowerCase();storyKeys.add(k);if(!c.keys.includes(k))c.keys.push(k);return m})});
+
+// ---------- tabs ----------
+const views={story:"v-story",book:"v-book",scene:"v-scene",phrase:"v-phrase",flash:"v-flash"};
+function show(v){
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));
+  Object.entries(views).forEach(([k,id])=>document.getElementById(id).hidden=k!==v);
+  if(v==="book")renderBook(); if(v==="scene")renderScene(); if(v==="phrase")renderPhrase(); if(v==="flash")nextCard(true);
+  closeSheet();
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>show(t.dataset.view));
+
+// ---------- story ----------
+let cur=0;
+function renderToc(){
+  const toc=document.getElementById("toc");
+  toc.innerHTML=CH.map((c,i)=>`<button data-i="${i}" aria-current="${i===cur}"><span class="n">CHAPTER ${i+1}</span>${c.t}</button>`).join("");
+  toc.querySelectorAll("button").forEach(b=>b.onclick=()=>{cur=+b.dataset.i;renderStory();window.scrollTo({top:0})});
+}
+function markup(s){
+  return esc(s).replace(/\{\{([^}|]+)(?:\|([^}]+))?\}\}/g,(m,a,b)=>{const k=(b||a).toLowerCase();return MAP[k]?`<button class="vw" data-k="${esc(k)}">${a}</button>`:a});
+}
+function renderStory(){
+  renderToc();
+  const c=CH[cur];
+  const paras=c.p.split(/\n\s*\n/).map(p=>{
+    let cls="";p=p.trim();
+    if(p.startsWith("[note]")){cls="note";p=p.slice(6)}
+    else if(p.startsWith("[letter]")){cls="letter";p=p.slice(8)}
+    return `<p class="${cls}">${markup(p)}</p>`}).join("");
+  const words=c.keys.map(k=>`<button class="chip" data-k="${esc(k)}">${MAP[k].w}</button>`).join("");
+  document.getElementById("reader").innerHTML=`
+    <div class="case">Chapter ${cur+1} / ${CH.length}</div>
+    <h2>${c.t}</h2>
+    ${cur===0?'<p class="tip">点線の単語をタップすると意味・例文が出る。</p>':""}
+    ${paras}
+    <details class="sum"><summary>日本語あらすじ（ネタバレ注意）</summary><p>${c.sum}</p></details>
+    <div class="eyebrow">この章の単語 · ${c.keys.length}</div>
+    <div class="chwords">${words}</div>
+    <div class="pager">
+      <button class="btn ghost" id="prev" ${cur===0?"disabled":""}>← 前の章</button>
+      <button class="btn" id="next" ${cur===CH.length-1?"disabled":""}>次の章 →</button>
+    </div>`;
+  document.getElementById("prev").onclick=()=>{cur--;renderStory();window.scrollTo({top:0})};
+  document.getElementById("next").onclick=()=>{cur++;renderStory();window.scrollTo({top:0})};
+}
+document.getElementById("reader").addEventListener("click",e=>{
+  const b=e.target.closest("[data-k]");if(!b)return;
+  document.querySelectorAll(".vw.active").forEach(x=>x.classList.remove("active"));
+  if(b.classList.contains("vw"))b.classList.add("active");
+  openSheet(b.dataset.k);
+});
+
+// ---------- sheet ----------
+const sheet=document.getElementById("sheet");let sheetKey=null;
+function openSheet(k){
+  const o=MAP[k];if(!o)return;sheetKey=k;
+  document.getElementById("s-cat").textContent=lab(o)+(o.f?" · 意外と知らない":"");
+  document.getElementById("s-w").textContent=o.w;
+  document.getElementById("s-ja").textContent=o.ja;
+  document.getElementById("s-def").textContent=o.def;
+  document.getElementById("s-ex").textContent=o.ex;
+  document.getElementById("s-exja").textContent=o.exja;
+  syncStar();sheet.classList.add("open");
+}
+function syncStar(){const s=document.getElementById("s-star");const on=known.has(sheetKey);s.classList.toggle("on",on);s.textContent=on?"★ 覚えた":"☆ 覚えた"}
+function closeSheet(){sheet.classList.remove("open");document.querySelectorAll(".vw.active").forEach(x=>x.classList.remove("active"))}
+document.getElementById("s-close").onclick=closeSheet;
+document.getElementById("s-star").onclick=()=>{known.has(sheetKey)?known.delete(sheetKey):known.add(sheetKey);saveKnown();syncStar()};
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
+
+// ---------- word book ----------
+let fCat="all",hideKnown=false;
+const catsEl=document.getElementById("cats");
+function renderCats(){
+  const counts={};VOC.forEach(o=>counts[o.c]=(counts[o.c]||0)+1);
+  const list=[["all","すべて",VOC.length],["story","小説に登場",[...storyKeys].length],...Object.keys(CATS).map(c=>[c,CATS[c],counts[c]||0])];
+  catsEl.innerHTML=list.map(([k,l,n])=>`<button class="chip" data-c="${k}" aria-pressed="${fCat===k}">${l} ${n}</button>`).join("");
+  catsEl.querySelectorAll("button").forEach(b=>b.onclick=()=>{fCat=b.dataset.c;renderCats();renderBook()});
+}
+function renderBook(){
+  const q=document.getElementById("q").value.trim().toLowerCase();
+  const items=VOC.filter(o=>(fCat==="all"||(fCat==="story"?storyKeys.has(o.k):o.c===fCat))
+    &&(!hideKnown||!known.has(o.k))
+    &&(!q||(o.w+o.ja+o.def+o.ex).toLowerCase().includes(q)));
+  document.getElementById("stat").textContent=`覚えた ${known.size} / ${VOC.length}`;
+  const g=document.getElementById("grid");
+  g.innerHTML=items.length?items.map(cardHTML).join(""):'<div class="empty">該当する単語がない。検索語かカテゴリーを変えてみて。</div>';
+}
+function cardHTML(o){return `
+    <div class="card ${known.has(o.k)?"known":""}">
+      <div class="card-head"><div class="w">${esc(o.w)}</div><button class="star ${known.has(o.k)?"on":""}" data-star="${esc(o.k)}">${known.has(o.k)?"★":"☆"} 覚えた</button></div>
+      <div class="cat">${lab(o)}${o.f?' · <span class="badge">意外と知らない</span>':""}${storyKeys.has(o.k)?' · <span class="inStory">小説に登場</span>':""}</div>
+      <div class="ja">${esc(o.ja)}</div>
+      <div class="def">${esc(o.def)}</div>
+      <div class="ex">${esc(o.ex)}</div>
+      <div class="exja">${esc(o.exja)}</div>
+    </div>`}
+document.getElementById("grid").addEventListener("click",e=>{const b=e.target.closest("[data-star]");if(!b)return;const k=b.dataset.star;known.has(k)?known.delete(k):known.add(k);saveKnown();renderBook()});
+document.getElementById("q").addEventListener("input",renderBook);
+document.getElementById("hideKnown").onclick=e=>{hideKnown=!hideKnown;e.target.setAttribute("aria-pressed",hideKnown);renderBook()};
+
+// ---------- scenes ----------
+let sCat="all",sTricky=false,sHide=false;
+function renderSCats(){
+  const counts={};SCN.forEach(o=>counts[o.c]=(counts[o.c]||0)+1);
+  const list=[["all","すべて",SCN.length],...Object.keys(SC).map(c=>[c,SC[c],counts[c]])];
+  const el=document.getElementById("scats");
+  el.innerHTML=list.map(([k,l,n])=>`<button class="chip" data-c="${k}" aria-pressed="${sCat===k}">${l} ${n}</button>`).join("");
+  el.querySelectorAll("button").forEach(b=>b.onclick=()=>{sCat=b.dataset.c;renderSCats();renderScene()});
+}
+function renderScene(){
+  const q=document.getElementById("sq").value.trim().toLowerCase();
+  const items=SCN.filter(o=>(sCat==="all"||o.c===sCat)&&(!sTricky||o.f)&&(!sHide||!known.has(o.k))&&(!q||(o.w+o.ja+o.def+o.ex).toLowerCase().includes(q)));
+  document.getElementById("sstat").textContent=`覚えた ${SCN.filter(o=>known.has(o.k)).length} / ${SCN.length}`;
+  document.getElementById("sgrid").innerHTML=items.length?items.map(cardHTML).join(""):'<div class="empty">該当する単語がない。検索語か場面を変えてみて。</div>';
+}
+document.getElementById("sgrid").addEventListener("click",e=>{const b=e.target.closest("[data-star]");if(!b)return;const k=b.dataset.star;known.has(k)?known.delete(k):known.add(k);saveKnown();renderScene()});
+document.getElementById("sq").addEventListener("input",renderScene);
+document.getElementById("sTricky").onclick=e=>{sTricky=!sTricky;e.target.setAttribute("aria-pressed",sTricky);renderScene()};
+document.getElementById("sHide").onclick=e=>{sHide=!sHide;e.target.setAttribute("aria-pressed",sHide);renderScene()};
+renderSCats();
+
+// ---------- phrases ----------
+let pCat="all",pHide=false;
+function phraseHTML(o){const on=known.has(o.k);return `
+    <div class="card ${on?"known":""}">
+      <div class="card-head"><div class="w">${esc(o.w)}</div><button class="star ${on?"on":""}" data-star="${esc(o.k)}">${on?"★":"☆"} 覚えた</button></div>
+      <div class="cat">${PC[o.pc]}</div>
+      <div class="ja">${esc(o.ja)}</div>
+      <div class="ex">${esc(o.ex)}</div>
+      <div class="exja">${esc(o.exja)}</div>
+      <div class="sims"><div class="lbl">類似表現</div>${o.sims.map(([a,b])=>`<div class="sim"><b>${esc(a)}</b><span>${esc(b||"")}</span></div>`).join("")}</div>
+    </div>`}
+function renderPCats(){
+  const counts={};PHR.forEach(o=>counts[o.pc]=(counts[o.pc]||0)+1);
+  const list=[["all","すべて",PHR.length],...Object.keys(PC).map(c=>[c,PC[c],counts[c]])];
+  const el=document.getElementById("pcats");
+  el.innerHTML=list.map(([k,l,n])=>`<button class="chip" data-c="${k}" aria-pressed="${pCat===k}">${l} ${n}</button>`).join("");
+  el.querySelectorAll("button").forEach(b=>b.onclick=()=>{pCat=b.dataset.c;renderPCats();renderPhrase()});
+}
+function renderPhrase(){
+  const q=document.getElementById("pq").value.trim().toLowerCase();
+  const items=PHR.filter(o=>(pCat==="all"||o.pc===pCat)&&(!pHide||!known.has(o.k))&&(!q||(o.w+o.ja+o.ex+o.exja+o.sims.flat().join(" ")).toLowerCase().includes(q)));
+  document.getElementById("pstat").textContent=`覚えた ${PHR.filter(o=>known.has(o.k)).length} / ${PHR.length}`;
+  document.getElementById("pgrid").innerHTML=items.length?items.map(phraseHTML).join(""):'<div class="empty">該当する表現がない。検索語かカテゴリーを変えてみて。</div>';
+}
+document.getElementById("pgrid").addEventListener("click",e=>{const b=e.target.closest("[data-star]");if(!b)return;const k=b.dataset.star;known.has(k)?known.delete(k):known.add(k);saveKnown();renderPhrase()});
+document.getElementById("pq").addEventListener("input",renderPhrase);
+document.getElementById("pHide").onclick=e=>{pHide=!pHide;e.target.setAttribute("aria-pressed",pHide);renderPhrase()};
+renderPCats();
+
+// ---------- flashcards ----------
+const fcat=document.getElementById("fcat"),fdir=document.getElementById("fdir"),fc=document.getElementById("fc");
+fcat.innerHTML=`<option value="all">すべて</option><option value="story">小説に登場</option>`+Object.entries(CATS).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")+`<option value="scn">場面別：すべて</option><option value="tricky">場面別：意外と知らない語</option>`+Object.entries(SC).map(([k,l])=>`<option value="${k}">場面別：${l}</option>`).join("")+`<option value="phr">日常表現：すべて</option>`;
+let deck=[],card=null,flipped=false;
+function buildDeck(){const v=fcat.value;const pool=v==="phr"?PHR:(v==="scn"||v==="tricky"||SC[v])?SCN:VOC;deck=pool.filter(o=>(v==="all"||v==="scn"||v==="phr"||(v==="tricky"?o.f:v==="story"?storyKeys.has(o.k):o.c===v))&&!known.has(o.k));for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}}
+function nextCard(rebuild){
+  if(rebuild||!deck.length)buildDeck();
+  card=deck.shift()||null;flipped=false;drawCard();
+}
+function drawCard(){
+  const st=document.getElementById("fstat");
+  if(!card){fc.innerHTML=`<div class="w">完了！</div><div class="hint">このカテゴリーは全部「覚えた」になった。単語帳で★を外すと復習できる。</div>`;st.textContent="";return}
+  const en=fdir.value==="en";
+  if(!flipped){fc.innerHTML=en?`<div class="cat">${lab(card)}</div><div class="w">${esc(card.w)}</div><div class="hint">タップでめくる</div>`
+    :`<div class="cat">${lab(card)}</div><div class="ja" style="font-size:22px">${esc(card.ja)}</div><div class="hint">タップでめくる</div>`}
+  else{fc.innerHTML=`<div class="w">${esc(card.w)}</div><div class="ja">${esc(card.ja)}</div><div class="def">${esc(card.def)}</div><div class="ex">${esc(card.ex)}</div><div class="exja">${esc(card.exja)}</div>`}
+  st.textContent=`残り ${deck.length+1} 枚 · 覚えた ${known.size}`;
+}
+fc.onclick=()=>{if(card){flipped=!flipped;drawCard()}};
+fc.onkeydown=e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();fc.click()}};
+document.getElementById("fagain").onclick=()=>{if(card)deck.splice(Math.min(deck.length,4),0,card);nextCard(false)};
+document.getElementById("fknow").onclick=()=>{if(card){known.add(card.k);saveKnown()}nextCard(false)};
+fcat.onchange=()=>nextCard(true);fdir.onchange=()=>{flipped=false;drawCard()};
+
+renderCats();renderStory();
+</script>
+
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
+</script>
+</body>
+</html>
